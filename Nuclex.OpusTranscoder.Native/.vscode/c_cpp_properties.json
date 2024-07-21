@@ -1,0 +1,36 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/obj/cmake-Debug/NuclexOpusEncoderNative_autogen/include/**",
+                "${workspaceFolder}/../Nuclex.Support.Native/Include/**",
+                "${workspaceFolder}/../third-party/nuclex-googletest/build/googletest/include/**",
+                "${workspaceFolder}/../third-party/nuclex-celero/build/include/**",
+                "/usr/include/qt5/**"
+            ],
+            "defines": [
+                "NUCLEX_FRAMEFIXER_EXECUTABLE",
+                "NUCLEX_FRAMEFIXER_SOURCE",
+                "NUCLEX_FRAMEFIXER_ENABLE_LIBAV",
+                "NUCLEX_FRAMEFIXER_ENABLE_CLI_INTERPOLATORS"
+            ],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64",
+            "compilerArgs": [
+                "-fvisibility=hidden",
+                "-Wpedantic",
+                "-Wall",
+                "-Wextra",
+                "-Wno-unknown-pragmas",
+                "-fpic",
+                "-funsafe-math-optimizations",
+                "-std=c++17",
+                "-fvisibility-inlines-hidden"
+            ]
+        }
+    ],
+    "version": 4
+}

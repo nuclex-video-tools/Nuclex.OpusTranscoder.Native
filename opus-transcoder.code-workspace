@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "Nuclex.Support.Native"
+		},
+		{
+			"path": "Nuclex.OpusTranscoder.Native"
+		}
+	]
+}
