@@ -67,7 +67,7 @@
         "isDefault": true
       },
       "type": "shell",
-      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusEncoderNativeTests",
+      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusTranscoderNativeTests",
       "args": [ ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -82,7 +82,7 @@
         "isDefault": true
       },
       "type": "shell",
-      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusEncoderNativeBenchmark",
+      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusTranscoderNativeBenchmark",
       "args": [ ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -97,7 +97,7 @@
         "isDefault": true
       },
       "type": "shell",
-      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusEncoderNative",
+      "command": "bin/linux-gcc13.2-amd64-debug/NuclexOpusTranscoderNative",
       "args": [ ],
       "options": {
         "cwd": "${workspaceFolder}"

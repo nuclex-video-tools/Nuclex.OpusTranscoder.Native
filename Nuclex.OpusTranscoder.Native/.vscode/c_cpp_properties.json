@@ -3,7 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/obj/cmake-Debug/NuclexOpusEncoderNative_autogen/include/**",
+                "${workspaceFolder}/obj/cmake-Debug/NuclexOpusTranscoderNative_autogen/include/**",
                 "${workspaceFolder}/../Nuclex.Support.Native/Include/**",
                 "${workspaceFolder}/../third-party/nuclex-googletest/build/googletest/include/**",
                 "${workspaceFolder}/../third-party/nuclex-celero/build/include/**",
@@ -12,8 +12,6 @@
             "defines": [
                 "NUCLEX_FRAMEFIXER_EXECUTABLE",
                 "NUCLEX_FRAMEFIXER_SOURCE",
-                "NUCLEX_FRAMEFIXER_ENABLE_LIBAV",
-                "NUCLEX_FRAMEFIXER_ENABLE_CLI_INTERPOLATORS"
             ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",

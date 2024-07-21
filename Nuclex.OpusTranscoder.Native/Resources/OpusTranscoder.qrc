@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+		<file>freepik-sound-waves-512x512.png</file>
+		<file>freepik-gear-512x512.png</file>
+		<file>freepik-sound-waves-and-gear-512x512.png</file>
+    </qresource>
+</RCC>
+

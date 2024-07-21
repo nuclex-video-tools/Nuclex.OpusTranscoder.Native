@@ -20,39 +20,11 @@ limitations under the License.
 // If the application is compiled as a DLL, this ensures symbols are exported
 #define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
-#include "./Config.h"
-
-#include "./MainWindow.h"
-
-#include <QApplication>
-#include <QMessageBox>
+#include "./Track.h"
 
 // --------------------------------------------------------------------------------------------- //
 
-#if !defined(NUCLEX_OPUSTRANSCODER_UNIT_TEST_EXECUTABLE)
-
-/// <summary>Entry point for the application</summary>
-/// <param name="argc">The number of command line arguments provided</param>
-/// <param name="argv">The values of all command line arguments</param>
-/// <returns>The exit code the application has terminated with</returns>
-int main(int argc, char *argv[]) {
-  int exitCode;
-  {
-    QApplication application(argc, argv);
-
-    application.setWindowIcon(QIcon(u8":/freepik-sound-waves-and-gear-512x512.png"));
-
-    std::shared_ptr<Nuclex::OpusTranscoder::MainWindow> mainWindow = (
-      std::make_shared<Nuclex::OpusTranscoder::MainWindow>()
-    );
-    mainWindow->show();
-
-    exitCode = application.exec();
-  }
-
-  return exitCode;
-}
-
-#endif // !defined(NUCLEX_FRAMEFIXER_UNIT_TEST_EXECUTABLE)
+// This file is only here to guarantee that its associated header has no hidden
+// dependencies and can be included on its own
 
 // --------------------------------------------------------------------------------------------- //
