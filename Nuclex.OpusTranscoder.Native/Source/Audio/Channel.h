@@ -34,66 +34,75 @@ namespace Nuclex::OpusTranscoder::Audio {
   template<typename TSample>
   class Channel {
 
+    /// <summary>Initializes a new audio channel with the specified sample count</summary>
+    /// <param name="sampleCount">Number of samples the channel starts out with</param>
     public: Channel(std::size_t sampleCount = 0) :
       samples(),
-      sampleRate(44100.0),
+      sampleRate(48000.0),
       placement(SF_CHANNEL_MAP_INVALID) {}
 
-
-    /*
-      SF_CHANNEL_MAP_INVALID = 0,
-      SF_CHANNEL_MAP_MONO = 1,
-      SF_CHANNEL_MAP_LEFT,					// Apple calls this 'Left'
-      SF_CHANNEL_MAP_RIGHT,					// Apple calls this 'Right'
-      SF_CHANNEL_MAP_CENTER,					// Apple calls this 'Center'
-      SF_CHANNEL_MAP_FRONT_LEFT,
-      SF_CHANNEL_MAP_FRONT_RIGHT,
-      SF_CHANNEL_MAP_FRONT_CENTER,
-      SF_CHANNEL_MAP_REAR_CENTER,				// Apple calls this 'Center Surround', Msft calls this 'Back Center'
-      SF_CHANNEL_MAP_REAR_LEFT,				// Apple calls this 'Left Surround', Msft calls this 'Back Left'
-      SF_CHANNEL_MAP_REAR_RIGHT,				// Apple calls this 'Right Surround', Msft calls this 'Back Right'
-      SF_CHANNEL_MAP_LFE,						// Apple calls this 'LFEScreen', Msft calls this 'Low Frequency' 
-      SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER,	// Apple calls this 'Left Center'
-      SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER,	// Apple calls this 'Right Center
-      SF_CHANNEL_MAP_SIDE_LEFT,				// Apple calls this 'Left Surround Direct'
-      SF_CHANNEL_MAP_SIDE_RIGHT,				// Apple calls this 'Right Surround Direct'
-      SF_CHANNEL_MAP_TOP_CENTER,				// Apple calls this 'Top Center Surround'
-      SF_CHANNEL_MAP_TOP_FRONT_LEFT,			// Apple calls this 'Vertical Height Left'
-      SF_CHANNEL_MAP_TOP_FRONT_RIGHT,			// Apple calls this 'Vertical Height Right'
-      SF_CHANNEL_MAP_TOP_FRONT_CENTER,		// Apple calls this 'Vertical Height Center'
-      SF_CHANNEL_MAP_TOP_REAR_LEFT,			// Apple and MS call this 'Top Back Left'
-      SF_CHANNEL_MAP_TOP_REAR_RIGHT,			// Apple and MS call this 'Top Back Right'
-      SF_CHANNEL_MAP_TOP_REAR_CENTER,			// Apple and MS call this 'Top Back Center'
-    */
+    /// <summary>Retrieves the spatial placement of this channel</summary>
+    /// <returns>The channel's spatial placement using libsndfile's channel map</returns>
+    /// <remarks>
+    ///   SF_CHANNEL_MAP_INVALID
+    ///   SF_CHANNEL_MAP_MONO
+    ///   SF_CHANNEL_MAP_LEFT
+    ///   SF_CHANNEL_MAP_RIGHT
+    ///   SF_CHANNEL_MAP_CENTER
+    ///   SF_CHANNEL_MAP_FRONT_LEFT
+    ///   SF_CHANNEL_MAP_FRONT_RIGHT
+    ///   SF_CHANNEL_MAP_FRONT_CENTER
+    ///   SF_CHANNEL_MAP_REAR_CENTER
+    ///   SF_CHANNEL_MAP_REAR_LEFT
+    ///   SF_CHANNEL_MAP_REAR_RIGHT
+    ///   SF_CHANNEL_MAP_LFE
+    ///   SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER
+    ///   SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER
+    ///   SF_CHANNEL_MAP_SIDE_LEFT
+    ///   SF_CHANNEL_MAP_SIDE_RIGHT
+    ///   SF_CHANNEL_MAP_TOP_CENTER
+    ///   SF_CHANNEL_MAP_TOP_FRONT_LEFT
+    ///   SF_CHANNEL_MAP_TOP_FRONT_RIGHT
+    ///   SF_CHANNEL_MAP_TOP_FRONT_CENTER
+    ///   SF_CHANNEL_MAP_TOP_REAR_LEFT
+    ///   SF_CHANNEL_MAP_TOP_REAR_RIGHT
+    ///   SF_CHANNEL_MAP_TOP_REAR_CENTER
+    /// </remarks>
     public: int GetChannelPlacement() const { return this->placement; }
+
+    /// <summary>Changes the spatial placement intended for the channel</summary>
+    /// <param name="placementFromLibSndFile">Spatial placement using the libsndfile map</param>
     public: void SetChannelPlacement(int placementFromLibSndFile) {
       this->placement = placementFromLibSndFile;
     }
 
+    /// <summary>Retrieves the sample rate the channel is played back at</summary>
+    /// <returns>The channel's playback sample rate</returns>
     public: double GetSampleRate() const { return this->sampleRate; }
+
+    /// <summary>Changes the sample rate the channel is intended to be played back at</summary>
+    /// <param name="sampleRate">New sample rate the channel should be played at</param>
     public: void SetSampleRate(double sampleRate) {
       this->sampleRate = sampleRate;
     }
 
+    /// <summary>Appends samples to the channel</summary>
+    /// <param name="samples">Pointer to the first sample that will be appended</param>
+    /// <param name="count">Number of samples that will be appended in total</param>
+    /// <param name="skipCount">Number of samples to skip after each appended sample</param>
     public: void AppendSamples(
       const TSample *samples, std::size_t count, std::size_t skipCount = 0
     ) {
       std::size_t appendIndex = this->samples.size();
       this->samples.resize(appendIndex + count);
 
-      float *target = this->samples.data();
+      TSample *target = this->samples.data();
       for(std::size_t index = 0; index < count; ++index) {
         *target = *samples;
         ++target;
         samples += skipCount;
       }
     }
-
-    //public: void AppendSamples(const TSample *samples, std::size_t count);
-    //public: void AppendSamples(const std::vector<TSample> &samples);
-
-    //public: void ReadSamples(
-
 
     /// <summary>Audio samples that describe the waveform to play back</summary>
     private: std::vector<TSample> samples;

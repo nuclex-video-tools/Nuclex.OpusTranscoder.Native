@@ -59,6 +59,10 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="path">Path of the audio file that will be read</param>
     /// <param name="stopToken">Token by which the loading operation can be cancelled</param>
     /// <returns>The audio track loaded from the specified file</returns>
+    /// <remarks>
+    ///   Assumes that the media file contains exactly one track. Otherwise, it is up
+    ///   to libsndfile which track will be loaded, probably the first, but who knows?
+    /// </remarks>
     public: static std::shared_ptr<Track<TSample>> Read(
       const std::string &path,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &stopToken = (

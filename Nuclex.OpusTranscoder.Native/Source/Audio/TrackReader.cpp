@@ -74,10 +74,28 @@ namespace {
       stopToken->ThrowIfCanceled();
     }
 
+    // Read the actual audio samples and split them into non-interleaved channels.
+    // The libsndfile examples deinterleave by linearly reading the source buffer,
+    // we instead do it channel-by-channel (the third argument to AppendSamples()
+    // is the number of samples to skip, we use it to skip over the other channels).
     const std::size_t ChunkSize = 16384;
-
     if constexpr(std::is_same<TSample, double>::value) {
-      throw std::logic_error(u8"This data type is not supported by the TrackReader");
+      std::vector<double> buffer;
+      buffer.resize(ChunkSize);
+      for(;;) {
+        int readFrameCount = ::sf_readf_double(
+          soundFile.get(),
+          buffer.data(), ChunkSize / channelCount
+        );
+        if(readFrameCount == 0) {
+          break; // There's no error return for sf_readf_float(), only EOF.
+        }
+        for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+          track->GetChannel(channelIndex).AppendSamples(
+            buffer.data() + channelIndex, readFrameCount, channelCount - 1
+          );
+        }
+      }
     } else if constexpr(std::is_same<TSample, float>::value) {
       std::vector<float> buffer;
       buffer.resize(ChunkSize);
@@ -87,9 +105,8 @@ namespace {
           buffer.data(), ChunkSize / channelCount
         );
         if(readFrameCount == 0) {
-          break;
+          break; // There's no error return for sf_readf_float(), only EOF.
         }
-
         for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
           track->GetChannel(channelIndex).AppendSamples(
             buffer.data() + channelIndex, readFrameCount, channelCount - 1
@@ -97,7 +114,22 @@ namespace {
         }
       }
     } else if constexpr(std::is_same<TSample, std::uint16_t>::value) {
-      throw std::logic_error(u8"This data type is not supported by the TrackReader");
+      std::vector<std::int16_t> buffer;
+      buffer.resize(ChunkSize);
+      for(;;) {
+        int readFrameCount = ::sf_readf_short(
+          soundFile.get(),
+          buffer.data(), ChunkSize / channelCount
+        );
+        if(readFrameCount == 0) {
+          break; // There's no error return for sf_readf_float(), only EOF.
+        }
+        for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+          track->GetChannel(channelIndex).AppendSamples(
+            buffer.data() + channelIndex, readFrameCount, channelCount - 1
+          );
+        }
+      }
     } else {
       throw std::logic_error(u8"This data type is not supported by the TrackReader");
     }
