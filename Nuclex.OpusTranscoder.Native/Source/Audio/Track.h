@@ -22,11 +22,33 @@ limitations under the License.
 
 #include "../Config.h"
 
+#include "./Channel.h"
+
+#include <vector>
+
 namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
+  template<typename TSample>
   class Track {
+
+    public: Track(std::size_t channelCount) {}
+
+    public: std::size_t CountChannels() const {
+      return this->channels.size();
+    }
+
+    public: Channel<TSample> &GetChannel(std::size_t index) {
+      return this->channels.at(index);
+    }
+
+    public: const Channel<TSample> &GetChannel(std::size_t index) const {
+      return this->channels.at(index);
+    }
+
+    private: std::vector<Channel<TSample>> channels;
+
   };
 
   // ------------------------------------------------------------------------------------------- //
