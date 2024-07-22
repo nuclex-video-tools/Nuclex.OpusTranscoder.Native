@@ -112,8 +112,8 @@ namespace Nuclex { namespace OpusTranscoder { namespace Platform {
       SFC_GET_CHANNEL_MAP_INFO,
       channelPlacements.data(), channelPlacements.size() * sizeof(int)
     );
-    if(unlikely(result != 0)) {
-      const char *messageAsCString = ::sf_strerror(nullptr);
+    if(unlikely(result != SF_TRUE)) { // Yep, this one returns 1 for good, 0 for bad O_o
+      const char *messageAsCString = ::sf_strerror(soundFile.get());
 
       std::string message(u8"Error retrieving channel mappings", 33);
       if(messageAsCString != nullptr) {

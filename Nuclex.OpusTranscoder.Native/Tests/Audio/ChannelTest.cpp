@@ -1,6 +1,6 @@
 #pragma region Apache License 2.0
 /*
-Nuclex Frame Fixer
+Nuclex Opus Transcoder
 Copyright (C) 2024 Markus Ewald / Nuclex Development Labs
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ limitations under the License.
 #pragma endregion // Apache License 2.0
 
 // If the library is compiled as a DLL, this ensures symbols are exported
-#define NUCLEX_FRAMEFIXER_SOURCE 1
+#define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
 #include "../../Source/Config.h"
 #include "../../Source/Audio/Channel.h"
@@ -31,6 +31,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   TEST(ChannelTest, HasDefaultConstructor) {
     Channel<float> c;
+    (void)c;
   }
 
   // ------------------------------------------------------------------------------------------- //

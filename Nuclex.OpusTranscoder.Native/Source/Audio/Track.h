@@ -33,7 +33,8 @@ namespace Nuclex::OpusTranscoder::Audio {
   template<typename TSample>
   class Track {
 
-    public: Track(std::size_t channelCount) {}
+    public: Track(std::size_t channelCount) :
+      channels(channelCount) {}
 
     public: std::size_t CountChannels() const {
       return this->channels.size();

@@ -27,6 +27,8 @@ limitations under the License.
 
 #include <Nuclex/Support/Threading/StopToken.h>
 
+#include <type_traits> // for std::is_same
+
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
@@ -55,10 +57,50 @@ namespace {
     std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track<TSample>> track = (
       std::make_shared<Nuclex::OpusTranscoder::Audio::Track<TSample>>(channelCount)
     );
-    
-    std::vector<int> channelPlacements = (
-      Nuclex::OpusTranscoder::Platform::SndFileApi::GetChannelMapInfo(soundFile)
-    );
+
+    // Pick up some channel properties while we got them in front of us...
+    {    
+      std::vector<int> channelPlacements = (
+        Nuclex::OpusTranscoder::Platform::SndFileApi::GetChannelMapInfo(soundFile)
+      );
+      for(std::size_t index = 0; index < channelCount; ++index) {
+        track->GetChannel(index).SetChannelPlacement(channelPlacements[index]);
+        track->GetChannel(index).SetSampleRate(soundFileInformation.samplerate);
+      }
+    }
+
+    // Make sure the load has not been cancelled in the meantime
+    if(static_cast<bool>(stopToken)) {
+      stopToken->ThrowIfCanceled();
+    }
+
+    const std::size_t ChunkSize = 16384;
+
+    if constexpr(std::is_same<TSample, double>::value) {
+      throw std::logic_error(u8"This data type is not supported by the TrackReader");
+    } else if constexpr(std::is_same<TSample, float>::value) {
+      std::vector<float> buffer;
+      buffer.resize(ChunkSize);
+      for(;;) {
+        int readFrameCount = ::sf_readf_float(
+          soundFile.get(),
+          buffer.data(), ChunkSize / channelCount
+        );
+        if(readFrameCount == 0) {
+          break;
+        }
+
+        for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+          track->GetChannel(channelIndex).AppendSamples(
+            buffer.data() + channelIndex, readFrameCount, channelCount - 1
+          );
+        }
+      }
+    } else if constexpr(std::is_same<TSample, std::uint16_t>::value) {
+      throw std::logic_error(u8"This data type is not supported by the TrackReader");
+    } else {
+      throw std::logic_error(u8"This data type is not supported by the TrackReader");
+    }
 
     return track;
   }
