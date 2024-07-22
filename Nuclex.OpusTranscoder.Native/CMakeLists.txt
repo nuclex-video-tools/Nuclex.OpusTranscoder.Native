@@ -72,6 +72,30 @@ if(NOT (TARGET NuclexSupportNative))
   )
 endif()
 
+# Add libsndfile as a sub-project, we use it to read audio files
+if(NOT (TARGET SndFile))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-sndfile
+    ${CMAKE_BINARY_DIR}/nuclex-sndfile
+  )
+endif()
+
+# Add WavPack as a sub-project, we use it to read WavPack audio files
+if(NOT (TARGET WavPack))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-wavpack
+    ${CMAKE_BINARY_DIR}/nuclex-wavpack
+  )
+endif()
+
+# Add OPUS as a sub-project, we use it to encode OPUS audio files
+if(NOT (TARGET OPUS))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opus
+    ${CMAKE_BINARY_DIR}/nuclex-opus
+  )
+endif()
+
 message(STATUS "Enabled options for Nuclex.OpusTranscoder.Native:")
 message(STATUS "  ⚫ Build core library")
 
@@ -158,6 +182,9 @@ function(add_third_party_libraries target_name)
   target_link_libraries(
     ${target_name}
     PUBLIC NuclexSupportNative
+    PRIVATE SndFile
+    PRIVATE WavPack
+    PRIVATE Opus
     PRIVATE Qt5::Widgets
     PRIVATE Qt5::Sql
     PRIVATE Threads::Threads

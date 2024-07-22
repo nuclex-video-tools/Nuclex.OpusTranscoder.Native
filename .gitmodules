@@ -33,3 +33,8 @@
 	url = ../../nuclex-builds/nuclex-googletest.git
 	branch = main
 	update = rebase
+[submodule "third-party/nuclex-sndfile"]
+	path = third-party/nuclex-sndfile
+	url = ../../nuclex-builds/nuclex-sndfile.git
+	branch = main
+	update = rebase
