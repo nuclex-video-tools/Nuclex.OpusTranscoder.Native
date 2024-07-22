@@ -14,8 +14,7 @@
       "args": [
         "-B", "obj/cmake-Debug",
         "-DCMAKE_BUILD_TYPE=Debug",
-        "-DBUILD_UNIT_TESTS=ON",
-        "-DENABLE_LIBAV=ON"
+        "-DBUILD_UNIT_TESTS=ON"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

@@ -5,13 +5,16 @@
             "includePath": [
                 "${workspaceFolder}/obj/cmake-Debug/NuclexOpusTranscoderNative_autogen/include/**",
                 "${workspaceFolder}/../Nuclex.Support.Native/Include/**",
+                "${workspaceFolder}/../third-party/nuclex-sndfile/build/include/**",
+                "${workspaceFolder}/../third-party/nuclex-wavpack/build/include/**",
+                "${workspaceFolder}/../third-party/nuclex-opus/build/include/**",
                 "${workspaceFolder}/../third-party/nuclex-googletest/build/googletest/include/**",
                 "${workspaceFolder}/../third-party/nuclex-celero/build/include/**",
                 "/usr/include/qt5/**"
             ],
             "defines": [
-                "NUCLEX_FRAMEFIXER_EXECUTABLE",
-                "NUCLEX_FRAMEFIXER_SOURCE",
+                "NUCLEX_OPUSTRANSCODER_EXECUTABLE",
+                "NUCLEX_OPSUTRANSCODER_SOURCE",
             ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
