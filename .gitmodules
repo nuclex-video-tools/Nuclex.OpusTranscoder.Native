@@ -8,6 +8,11 @@
 	url = ../../nuclex-shared-cpp/Nuclex.Support.Native.git
 	branch = main
 	update = rebase
+[submodule "Nuclex.Audio.Native"]
+	path = Nuclex.Audio.Native
+	url = ../../nuclex-shared-cpp/Nuclex.Audio.Native.git
+	branch = main
+	update = rebase
 [submodule "third-party/nuclex-opus"]
 	path = third-party/nuclex-opus
 	url = ../../nuclex-builds/nuclex-opus.git
