@@ -188,6 +188,10 @@ function(add_third_party_libraries target_name)
     PRIVATE Qt5::Widgets
     PRIVATE Qt5::Sql
     PRIVATE Threads::Threads
+
+    PRIVATE ogg
+    PRIVATE vorbis
+    PRIVATE FLAC
   )
 
   # On Unix systems, the application and unit test executable should look for
