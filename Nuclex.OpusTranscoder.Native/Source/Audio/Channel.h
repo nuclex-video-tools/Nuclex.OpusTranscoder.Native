@@ -30,7 +30,8 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  /// <summary>Audio channel 
+  /// <summary>Single audio channel storing samples and placement information</summary>
+  /// <typeparam name="TSample">Type of samples the audio channel is storgin</typeparam>
   template<typename TSample>
   class Channel {
 

@@ -24,8 +24,6 @@ limitations under the License.
 #include "ui_MainWindow.h"
 
 #include <QFileDialog>
-#include <QGraphicsPixmapItem>
-#include <QThread>
 #include <QComboBox>
 
 namespace {
@@ -44,11 +42,66 @@ namespace Nuclex::OpusTranscoder {
     ui(std::make_unique<Ui::MainWindow>()) {
 
     this->ui->setupUi(this);
+
+
+    connect(
+      this->ui->browseInputFileButton, &QPushButton::clicked,
+      this, &MainWindow::browseInputFileClicked
+    );
+    connect(
+      this->ui->browseOutputFileButton, &QPushButton::clicked,
+      this, &MainWindow::browseOutputFileClicked
+    );
   }
 
   // ------------------------------------------------------------------------------------------- //
 
   MainWindow::~MainWindow() {}
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::browseInputFileClicked() {
+    std::unique_ptr<QFileDialog> selectDirectoryDialog = (
+      std::make_unique<QFileDialog>(this)
+    );
+
+    QStringList filters(
+      {
+        u8"Supported audio files (*.wv *.wav *.flac)",
+        u8"WavPack audio files (*.wv)",
+        u8"Microsoft audio files (*.wav)",
+        u8"FLAC audio files (*.flac)",
+        u8"All files (*)"
+      }
+    );
+
+    // Configure the dialog to let the user browse for a directory
+    selectDirectoryDialog->setFileMode(QFileDialog::FileMode::ExistingFile);
+    selectDirectoryDialog->setOption(QFileDialog::Option::ReadOnly);
+    selectDirectoryDialog->setNameFilters(filters);
+    selectDirectoryDialog->setWindowTitle(
+      QString(u8"Select audio file to transcode to OPUS")
+    );
+
+    // Display the dialog, the user can select a directory or hit cancel
+    int result = selectDirectoryDialog->exec();
+
+    // If the user selected a directory and did not cancel,
+    // store its full path in the working directory text box.
+    if(result == QDialog::Accepted) {
+      QStringList selectedFiles = selectDirectoryDialog->selectedFiles();
+      if(!selectedFiles.empty()) {
+        this->ui->inputPathLine->setText(selectedFiles[0]);
+        //ingestMovieFrames();
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::browseOutputFileClicked() {
+
+  }
 
   // ------------------------------------------------------------------------------------------- //
 

@@ -54,6 +54,11 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Frees all resources owned by the main window</summary>
     public: ~MainWindow();
 
+    /// <summary>Shows the file selector when the user clicks the browse button</param>
+    private: void browseInputFileClicked();
+    /// <summary>Shows the file selector when the user clicks the browse button</param>
+    private: void browseOutputFileClicked();
+
     /// <summary>The user interface arrangement generated from the .ui file</summary>
     private: std::unique_ptr<Ui::MainWindow> ui;
 

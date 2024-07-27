@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "Nuclex.OpusTranscoder.Native"
+		},
+		{
+			"path": "Nuclex.Audio.Native"
 		}
 	],
 	"settings": {

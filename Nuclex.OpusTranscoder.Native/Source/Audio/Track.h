@@ -76,6 +76,6 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-} // namespace Nuclex::OpusTranscoder
+} // namespace Nuclex::OpusTranscoder::Audio
 
 #endif // NUCLEX_OPUSTRANSCODER_AUDIO_TRACK_H
