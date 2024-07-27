@@ -113,6 +113,35 @@ namespace Nuclex { namespace OpusTranscoder { namespace Platform {
       channelPlacements.data(), channelPlacements.size() * sizeof(int)
     );
     if(unlikely(result != SF_TRUE)) { // Yep, this one returns 1 for good, 0 for bad O_o
+      
+      // Some audio files have no channel placements specified. Unfortunately, libsndfile
+      // then fails with the error message "no error."
+      //
+      // So we fake it. I guess I need a better audio library in the long term :-/
+      if(channelPlacements.size() == 2) { // stereo
+        channelPlacements[0] = SF_CHANNEL_MAP_LEFT;
+        channelPlacements[1] = SF_CHANNEL_MAP_RIGHT;
+        return channelPlacements;
+      } else if(channelPlacements.size() == 6) { // 5.1
+        channelPlacements[0] = SF_CHANNEL_MAP_FRONT_LEFT;
+        channelPlacements[1] = SF_CHANNEL_MAP_FRONT_RIGHT;
+        channelPlacements[2] = SF_CHANNEL_MAP_FRONT_CENTER;
+        channelPlacements[3] = SF_CHANNEL_MAP_LFE;
+        channelPlacements[4] = SF_CHANNEL_MAP_SIDE_LEFT; // could also be REAR_LEFT
+        channelPlacements[5] = SF_CHANNEL_MAP_SIDE_RIGHT; // could also be REAR_RIGHT
+        return channelPlacements;
+      } else if(channelPlacements.size() == 8) { // 7.1
+        channelPlacements[0] = SF_CHANNEL_MAP_FRONT_LEFT;
+        channelPlacements[1] = SF_CHANNEL_MAP_FRONT_RIGHT;
+        channelPlacements[2] = SF_CHANNEL_MAP_FRONT_CENTER;
+        channelPlacements[3] = SF_CHANNEL_MAP_LFE;
+        channelPlacements[4] = SF_CHANNEL_MAP_SIDE_LEFT;
+        channelPlacements[5] = SF_CHANNEL_MAP_SIDE_RIGHT;
+        channelPlacements[6] = SF_CHANNEL_MAP_REAR_LEFT;
+        channelPlacements[7] = SF_CHANNEL_MAP_REAR_RIGHT;
+        return channelPlacements;
+      }
+
       const char *messageAsCString = ::sf_strerror(soundFile.get());
 
       std::string message(u8"Error retrieving channel mappings", 33);
