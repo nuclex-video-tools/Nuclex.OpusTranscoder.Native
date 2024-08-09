@@ -43,3 +43,13 @@
 	url = ../../nuclex-builds/nuclex-sndfile.git
 	branch = main
 	update = rebase
+[submodule "third-party/nuclex-opusfile"]
+	path = third-party/nuclex-opusfile
+	url = ../../nuclex-builds/nuclex-opusfile.git
+	branch = main
+	update = rebase
+[submodule "third-party/nuclex-ogg"]
+	path = third-party/nuclex-ogg
+	url = ../../nuclex-builds/nuclex-ogg.git
+	branch = main
+	update = rebase
