@@ -53,3 +53,8 @@
 	url = ../../nuclex-builds/nuclex-ogg.git
 	branch = main
 	update = rebase
+[submodule "third-party/nuclex-flac"]
+	path = third-party/nuclex-flac
+	url = ../../nuclex-builds/nuclex-flac.git
+	branch = main
+	update = rebase
