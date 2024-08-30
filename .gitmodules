@@ -58,3 +58,8 @@
 	url = ../../nuclex-builds/nuclex-flac.git
 	branch = main
 	update = rebase
+[submodule "third-party/nuclex-opusenc"]
+	path = third-party/nuclex-opusenc
+	url = ../../nuclex-builds/nuclex-opusenc.git
+	branch = main
+	update = rebase
