@@ -72,6 +72,14 @@ if(NOT (TARGET NuclexSupportNative))
   )
 endif()
 
+# Add Nuclex.Audio.Native as a sub-project, we link it for audio processing
+if(NOT (TARGET NuclexAudioNative))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../Nuclex.Audio.Native
+    ${CMAKE_BINARY_DIR}/NuclexAudioNative
+  )
+endif()
+
 # Add libsndfile as a sub-project, we use it to read audio files
 if(NOT (TARGET SndFile))
   add_subdirectory(
@@ -89,10 +97,18 @@ if(NOT (TARGET WavPack))
 endif()
 
 # Add OPUS as a sub-project, we use it to encode OPUS audio files
-if(NOT (TARGET OPUS))
+if(NOT (TARGET Opus))
   add_subdirectory(
     ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opus
     ${CMAKE_BINARY_DIR}/nuclex-opus
+  )
+endif()
+
+# Add OpusFile as a sub-project, we use it to encode OPUS audio files
+if(NOT (TARGET OpusFile))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opusfile
+    ${CMAKE_BINARY_DIR}/nuclex-opusfile
   )
 endif()
 
@@ -182,6 +198,7 @@ function(add_third_party_libraries target_name)
   target_link_libraries(
     ${target_name}
     PUBLIC NuclexSupportNative
+    PUBLIC NuclexAudioNative
     PRIVATE SndFile
     PRIVATE WavPack
     PRIVATE Opus
@@ -339,6 +356,15 @@ endif()
 # and have set the rpath accordingly, it needs to be in the same directory
 install(
   TARGETS NuclexSupportNative
+  ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
+  LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
+  RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
+)
+
+# Do the same for Nuclex.Audio.Native. Since we depend on this library
+# and have set the rpath accordingly, it needs to be in the same directory
+install(
+  TARGETS NuclexAudioNative
   ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
   LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
   RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin/${NUCLEX_COMPILER_TAG}
