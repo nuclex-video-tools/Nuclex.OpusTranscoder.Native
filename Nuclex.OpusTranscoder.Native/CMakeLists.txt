@@ -80,22 +80,6 @@ if(NOT (TARGET NuclexAudioNative))
   )
 endif()
 
-# Add libsndfile as a sub-project, we use it to read audio files
-if(NOT (TARGET SndFile))
-  add_subdirectory(
-    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-sndfile
-    ${CMAKE_BINARY_DIR}/nuclex-sndfile
-  )
-endif()
-
-# Add WavPack as a sub-project, we use it to read WavPack audio files
-if(NOT (TARGET WavPack))
-  add_subdirectory(
-    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-wavpack
-    ${CMAKE_BINARY_DIR}/nuclex-wavpack
-  )
-endif()
-
 # Add OPUS as a sub-project, we use it to encode OPUS audio files
 if(NOT (TARGET Opus))
   add_subdirectory(
@@ -109,6 +93,14 @@ if(NOT (TARGET OpusFile))
   add_subdirectory(
     ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opusfile
     ${CMAKE_BINARY_DIR}/nuclex-opusfile
+  )
+endif()
+
+# Add OpusEnc as a sub-project, we use it to encode OPUS audio files
+if(NOT (TARGET OpusEnc))
+  add_subdirectory(
+    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opusenc
+    ${CMAKE_BINARY_DIR}/nuclex-opusenc
   )
 endif()
 
@@ -199,16 +191,12 @@ function(add_third_party_libraries target_name)
     ${target_name}
     PUBLIC NuclexSupportNative
     PUBLIC NuclexAudioNative
-    PRIVATE SndFile
-    PRIVATE WavPack
     PRIVATE Opus
+    PRIVATE OpusFile
+    PRIVATE OpusEnc
     PRIVATE Qt5::Widgets
     PRIVATE Qt5::Sql
     PRIVATE Threads::Threads
-
-    PRIVATE ogg
-    PRIVATE vorbis
-    PRIVATE FLAC
   )
 
   # On Unix systems, the application and unit test executable should look for
