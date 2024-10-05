@@ -23,6 +23,7 @@ limitations under the License.
 #include "./Config.h"
 
 #include "./MainWindow.h"
+#include "./Services/ServicesRoot.h" // for ServicesRoot
 
 #include <QApplication>
 #include <QMessageBox>
@@ -42,6 +43,26 @@ int main(int argc, char *argv[]) {
 
     application.setWindowIcon(QIcon(u8":/freepik-sound-waves-and-gear-512x512.png"));
 
+    // Create the service provider (we use a simple class that ties all the services
+    // together instead of a full-blown IoC container to keep things simple).
+    std::shared_ptr<Nuclex::OpusTranscoder::Services::ServicesRoot> servicesRoot;
+    try {
+      servicesRoot = std::make_shared<Nuclex::OpusTranscoder::Services::ServicesRoot>();
+    }
+    catch(const std::exception &error) {
+      std::unique_ptr<QMessageBox> messageBox = std::make_unique<QMessageBox>();
+      messageBox->setText(
+        QString(u8"The application failed to launch because of an error\n") +
+        QString(error.what())
+      );
+      messageBox->setIcon(QMessageBox::Icon::Critical);
+      messageBox->setStandardButtons(QMessageBox::StandardButton::Ok);
+      messageBox->setDefaultButton(QMessageBox::StandardButton::Ok);
+
+      messageBox->exec();
+      return -1;
+    }
+
     std::shared_ptr<Nuclex::OpusTranscoder::MainWindow> mainWindow = (
       std::make_shared<Nuclex::OpusTranscoder::MainWindow>()
     );
@@ -53,6 +74,6 @@ int main(int argc, char *argv[]) {
   return exitCode;
 }
 
-#endif // !defined(NUCLEX_FRAMEFIXER_UNIT_TEST_EXECUTABLE)
+#endif // !defined(NUCLEX_OPUSTRANSCODER_UNIT_TEST_EXECUTABLE)
 
 // --------------------------------------------------------------------------------------------- //

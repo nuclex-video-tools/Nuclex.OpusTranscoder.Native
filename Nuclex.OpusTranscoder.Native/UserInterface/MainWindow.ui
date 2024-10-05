@@ -6,31 +6,252 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>692</width>
-    <height>436</height>
+    <width>697</width>
+    <height>499</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Anti-Clip Iterative Opus Encoder</string>
+   <string>Opus Transcoder (with extras)</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="2">
-     <widget class="QPushButton" name="browseInputFileButton">
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="3">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item row="6" column="1" colspan="4">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QCheckBox" name="preventClippingOption">
+       <widget class="QRadioButton" name="ignoreClippingOption">
         <property name="text">
-         <string>Prevent Clipping</string>
+         <string>Ignore</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QRadioButton" name="tuckHalfWavesOption">
+        <property name="text">
+         <string>Reduce Half-Waves</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="iterativeAntiClipOption">
+        <property name="text">
+         <string>Iterative Reduction</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1" colspan="3">
+     <widget class="QLineEdit" name="inputPathLine"/>
+    </item>
+    <item row="3" column="3" colspan="2">
+     <widget class="QComboBox" name="outputChannelsCombo"/>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="nightModeLabel">
+      <property name="text">
+       <string>NightMode</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1" colspan="4">
+     <widget class="QGraphicsView" name="channelGraphics"/>
+    </item>
+    <item row="0" column="4">
+     <widget class="QPushButton" name="browseInputFileButton">
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0" colspan="5">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="5" column="1" colspan="4">
+     <widget class="QSlider" name="nightModeSlider">
+      <property name="maximum">
+       <number>100</number>
+      </property>
+      <property name="singleStep">
+       <number>5</number>
+      </property>
+      <property name="pageStep">
+       <number>25</number>
+      </property>
+      <property name="value">
+       <number>50</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1" colspan="2">
+     <widget class="QComboBox" name="inputChannelsCombo"/>
+    </item>
+    <item row="7" column="1" colspan="4">
+     <layout class="QHBoxLayout" name="bitrateLayout">
+      <item>
+       <widget class="QSlider" name="bitrateSlider">
+        <property name="minimum">
+         <number>64</number>
+        </property>
+        <property name="maximum">
+         <number>256</number>
+        </property>
+        <property name="singleStep">
+         <number>4</number>
+        </property>
+        <property name="pageStep">
+         <number>32</number>
+        </property>
+        <property name="value">
+         <number>192</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="bitrateNumber">
+        <property name="minimum">
+         <number>64</number>
+        </property>
+        <property name="maximum">
+         <number>256</number>
+        </property>
+        <property name="singleStep">
+         <number>4</number>
+        </property>
+        <property name="value">
+         <number>192</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="bitrateKilobitsLabel">
+        <property name="text">
+         <string>KBit/s</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="antiClipLabel">
+      <property name="text">
+       <string>Prevent Clipping</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4">
+     <widget class="QPushButton" name="browseOutputFileButton">
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" rowspan="2">
+     <widget class="QLabel" name="channelsLabel">
+      <property name="text">
+       <string>Channels</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0" colspan="5">
+     <widget class="QFrame" name="warningFrame">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QLabel" name="messageLabel">
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Encoding Progress</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="encodeProgress">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>1</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="3">
+     <widget class="QLineEdit" name="outputPathLine"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="outputFileLabel">
+      <property name="text">
+       <string>Output File</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="5">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="10" column="0" colspan="5">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -60,81 +281,6 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="outputFileLabel">
-      <property name="text">
-       <string>Output File</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QPushButton" name="browseOutputFileButton">
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="3">
-     <spacer name="verticalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="2" column="1">
-     <spacer name="verticalSpacer_2">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>10</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="inputPathLine"/>
-    </item>
-    <item row="7" column="0" colspan="3">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>10</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="6" column="0" colspan="3">
-     <widget class="QProgressBar" name="encodeProgress">
-      <property name="value">
-       <number>24</number>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLineEdit" name="outputPathLine"/>
-    </item>
-    <item row="3" column="1" colspan="2">
-     <widget class="QTreeView" name="channelList"/>
-    </item>
     <item row="0" column="0">
      <widget class="QLabel" name="inputFileLabel">
       <property name="text">
@@ -142,20 +288,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="channelsLabel">
+    <item row="7" column="0">
+     <widget class="QLabel" name="bitrateLabel">
       <property name="text">
-       <string>Channels</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="0" colspan="3">
-     <widget class="QLabel" name="encodingProgressLabel">
-      <property name="text">
-       <string>Encoding Progress</string>
+       <string>Target Bitrate</string>
       </property>
      </widget>
     </item>

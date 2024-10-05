@@ -40,6 +40,17 @@ namespace Ui {
 
 }
 
+namespace Nuclex::OpusTranscoder::Services {
+
+  // ------------------------------------------------------------------------------------------- //
+
+  class ServicesRoot;
+  class MetadataReader;
+
+  // ------------------------------------------------------------------------------------------- //
+
+} // namespace Nuclex::OpusTranscoder::Services
+
 namespace Nuclex::OpusTranscoder {
 
   // ------------------------------------------------------------------------------------------- //
@@ -54,13 +65,37 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Frees all resources owned by the main window</summary>
     public: ~MainWindow();
 
+    /// <summary>Binds the main window to the specified service container</summary>
+    /// <param name="servicesRoot">Service container the main window will use</param>
+    /// <remarks>
+    ///   The root service container contains all the services that perform the actual work
+    ///   of the application (while this dialog just displays the current state reported by
+    ///   the services or calls into the relevant services when the user clicks a button to
+    ///   enact a change).
+    /// </remarks>
+    public: void BindToServicesRoot(
+      const std::shared_ptr<Services::ServicesRoot> &servicesRoot
+    );
+
+    /// <summary>Suggests an output name if one hasn't already been chosen</summary>
+    private: void suggestOutputFilename();
+
+    /// <summary>Reads the properties of the currently selected input file</summary>
+    private: void readInputFileProperties();
+
+    private: void metadataUpdated();
+
     /// <summary>Shows the file selector when the user clicks the browse button</param>
     private: void browseInputFileClicked();
     /// <summary>Shows the file selector when the user clicks the browse button</param>
     private: void browseOutputFileClicked();
+    /// <summary>Aborts the encode or quits the application depending in its state</param>
+    private: void quitClicked();
 
     /// <summary>The user interface arrangement generated from the .ui file</summary>
     private: std::unique_ptr<Ui::MainWindow> ui;
+    /// <summary>Reader that is used to obtain metadata on the input file</summary>
+    private: std::shared_ptr<Services::MetadataReader> metadataReader;
 
   };
 

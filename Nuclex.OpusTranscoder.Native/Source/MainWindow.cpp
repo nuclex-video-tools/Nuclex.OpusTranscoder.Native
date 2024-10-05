@@ -22,6 +22,8 @@ limitations under the License.
 
 #include "./MainWindow.h"
 #include "ui_MainWindow.h"
+#include "./Services/ServicesRoot.h"
+#include "./Services/MetadataReader.h"
 
 #include <QFileDialog>
 #include <QComboBox>
@@ -43,6 +45,9 @@ namespace Nuclex::OpusTranscoder {
 
     this->ui->setupUi(this);
 
+    this->ui->nightModeLabel->hide();
+    this->ui->nightModeSlider->hide();
+    this->ui->warningFrame->hide();
 
     connect(
       this->ui->browseInputFileButton, &QPushButton::clicked,
@@ -52,11 +57,41 @@ namespace Nuclex::OpusTranscoder {
       this->ui->browseOutputFileButton, &QPushButton::clicked,
       this, &MainWindow::browseOutputFileClicked
     );
+    connect(
+      this->ui->quitButton, &QPushButton::clicked,
+      this, &MainWindow::quitClicked
+    );
   }
 
   // ------------------------------------------------------------------------------------------- //
 
   MainWindow::~MainWindow() {}
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::BindToServicesRoot(
+    const std::shared_ptr<Services::ServicesRoot> &servicesRoot
+  ) {
+    this->metadataReader = servicesRoot->GetMetadataReader();
+    this->metadataReader->Updated.Subscribe<MainWindow, &MainWindow::metadataUpdated>(this);
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::suggestOutputFilename() {
+    
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::readInputFileProperties() {
+    this->metadataReader->AnalyzeAudioFile(this->ui->inputPathLine->text().toStdString());
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::metadataUpdated() {
+  }
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -69,7 +104,7 @@ namespace Nuclex::OpusTranscoder {
       {
         u8"Supported audio files (*.wv *.wav *.flac)",
         u8"WavPack audio files (*.wv)",
-        u8"Microsoft audio files (*.wav)",
+        u8"Waveform audio files (*.wav)",
         u8"FLAC audio files (*.flac)",
         u8"All files (*)"
       }
@@ -92,7 +127,8 @@ namespace Nuclex::OpusTranscoder {
       QStringList selectedFiles = selectDirectoryDialog->selectedFiles();
       if(!selectedFiles.empty()) {
         this->ui->inputPathLine->setText(selectedFiles[0]);
-        //ingestMovieFrames();
+        suggestOutputFilename();
+        readInputFileProperties();
       }
     }
   }
@@ -101,6 +137,12 @@ namespace Nuclex::OpusTranscoder {
 
   void MainWindow::browseOutputFileClicked() {
 
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::quitClicked() {
+    close();
   }
 
   // ------------------------------------------------------------------------------------------- //
