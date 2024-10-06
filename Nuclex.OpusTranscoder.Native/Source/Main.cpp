@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<Nuclex::OpusTranscoder::MainWindow> mainWindow = (
       std::make_shared<Nuclex::OpusTranscoder::MainWindow>()
     );
+    mainWindow->BindToServicesRoot(servicesRoot);
     mainWindow->show();
 
     exitCode = application.exec();

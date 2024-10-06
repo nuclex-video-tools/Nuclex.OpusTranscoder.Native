@@ -27,10 +27,63 @@ limitations under the License.
 
 #include <QFileDialog>
 #include <QComboBox>
+#include <QVariant>
 
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
+
+  QStringList GetCompatibleInputFormatNames(const Nuclex::Audio::TrackInfo &metadata) {
+    using Nuclex::Audio::ChannelPlacement;
+
+    QStringList compatibleFormats;
+
+    std::size_t channelCount = metadata.ChannelCount;
+    ChannelPlacement channelPlacements = metadata.ChannelPlacements;
+
+    ChannelPlacement none = ChannelPlacement::Unknown;
+    if((channelPlacements & ChannelPlacement::LowFrequencyEffects) == none) {
+      if(channelCount == 1) {
+        compatibleFormats.append(u8"Mono");
+      } else if(channelCount == 2) {
+        compatibleFormats.append(u8"Stereo");
+      } else {
+        compatibleFormats.append(
+          QVariant(static_cast<int>(channelCount)).toString() + u8".0 Surround"
+        );
+      }
+    } else {
+      if(channelCount == 1) {
+        compatibleFormats.append(u8"Bass");
+      } else if(channelCount == 2) {
+        compatibleFormats.append(u8"1.1 Mono");
+      } else if(channelCount == 3) {
+        compatibleFormats.append(u8"2.1 Stereo");
+      } else {
+        compatibleFormats.append(
+          QVariant(static_cast<int>(channelCount - 1)).toString() + u8".1 Surround"
+        );
+      }
+    }
+
+    return compatibleFormats;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  QStringList GetSupportedOutputLayoutNames(const Nuclex::Audio::TrackInfo &metadata) {
+    QStringList outputLayouts;
+
+    outputLayouts.append(u8"Stereo");
+
+    std::size_t channelCount = metadata.ChannelCount;
+    if(channelCount >= 5) {
+      outputLayouts.append(u8"5.1 Surround");
+    }
+
+    return outputLayouts;
+  }
+
   // ------------------------------------------------------------------------------------------- //
 
 } // anonymous namespace
@@ -65,7 +118,13 @@ namespace Nuclex::OpusTranscoder {
 
   // ------------------------------------------------------------------------------------------- //
 
-  MainWindow::~MainWindow() {}
+  MainWindow::~MainWindow() {
+    if(static_cast<bool>(this->metadataReader)) {
+      this->metadataReader->Updated.Unsubscribe<
+        MainWindow, &MainWindow::metadataUpdatedInBackgroundThread
+      >(this);
+    }
+  }
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -73,7 +132,9 @@ namespace Nuclex::OpusTranscoder {
     const std::shared_ptr<Services::ServicesRoot> &servicesRoot
   ) {
     this->metadataReader = servicesRoot->GetMetadataReader();
-    this->metadataReader->Updated.Subscribe<MainWindow, &MainWindow::metadataUpdated>(this);
+    this->metadataReader->Updated.Subscribe<
+      MainWindow, &MainWindow::metadataUpdatedInBackgroundThread
+    >(this);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -90,7 +151,33 @@ namespace Nuclex::OpusTranscoder {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void MainWindow::metadataUpdated() {
+  void MainWindow::metadataUpdatedInBackgroundThread() {
+    QMetaObject::invokeMethod(
+      this,
+      &MainWindow::updateMetadata,
+      Qt::ConnectionType::QueuedConnection
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::updateMetadata() {
+    this->metadata = this->metadataReader->GetMetadata();
+    
+    if(this->metadata.has_value()) {
+      this->ui->inputChannelsCombo->clear();
+      this->ui->inputChannelsCombo->addItems(
+        GetCompatibleInputFormatNames(this->metadata.value())
+      );
+      this->ui->inputChannelsCombo->setCurrentIndex(0);
+
+      this->ui->outputChannelsCombo->clear();
+      this->ui->outputChannelsCombo->addItems(
+        GetSupportedOutputLayoutNames(this->metadata.value())
+      );
+      this->ui->outputChannelsCombo->setCurrentIndex(0);
+    }
+
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -110,7 +197,7 @@ namespace Nuclex::OpusTranscoder {
       }
     );
 
-    // Configure the dialog to let the user browse for a directory
+    // Configure the dialog to let the user browse for an audio file
     selectDirectoryDialog->setFileMode(QFileDialog::FileMode::ExistingFile);
     selectDirectoryDialog->setOption(QFileDialog::Option::ReadOnly);
     selectDirectoryDialog->setNameFilters(filters);
@@ -118,11 +205,11 @@ namespace Nuclex::OpusTranscoder {
       QString(u8"Select audio file to transcode to OPUS")
     );
 
-    // Display the dialog, the user can select a directory or hit cancel
+    // Display the dialog, the user can select a single file or hit cancel
     int result = selectDirectoryDialog->exec();
 
-    // If the user selected a directory and did not cancel,
-    // store its full path in the working directory text box.
+    // If the user selected a file and did not cancel,
+    // store its full path in the input file path text box.
     if(result == QDialog::Accepted) {
       QStringList selectedFiles = selectDirectoryDialog->selectedFiles();
       if(!selectedFiles.empty()) {

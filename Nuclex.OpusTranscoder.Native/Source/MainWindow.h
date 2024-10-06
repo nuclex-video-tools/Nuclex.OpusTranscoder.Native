@@ -22,6 +22,8 @@ limitations under the License.
 
 #include "./Config.h"
 
+#include <Nuclex/Audio/TrackInfo.h>
+
 #include <QMainWindow> // for QMainWindow
 #include <QItemSelection> // for QItemSelection
 #include <QMutex> // for QMutex
@@ -83,7 +85,8 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Reads the properties of the currently selected input file</summary>
     private: void readInputFileProperties();
 
-    private: void metadataUpdated();
+    private: void metadataUpdatedInBackgroundThread();
+    private: void updateMetadata();
 
     /// <summary>Shows the file selector when the user clicks the browse button</param>
     private: void browseInputFileClicked();
@@ -96,6 +99,8 @@ namespace Nuclex::OpusTranscoder {
     private: std::unique_ptr<Ui::MainWindow> ui;
     /// <summary>Reader that is used to obtain metadata on the input file</summary>
     private: std::shared_ptr<Services::MetadataReader> metadataReader;
+    /// <summary>Metadata for the currently selected input audio file</summary>
+    private: std::optional<Audio::TrackInfo> metadata;
 
   };
 

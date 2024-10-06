@@ -87,7 +87,7 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <summary>Handles loading and decoding audio files</summary>
     private: std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> loader;
     /// <summary>Must be held when copying or updating the metadata</summary>
-    private: std::mutex metadataAccessMutex;
+    private: mutable std::mutex metadataAccessMutex;
     /// <summary>Path of the file being examines, empty when started/done</summary>
     private: std::string path;
     /// <summary>Metadata for the current audio file, if any</summary>

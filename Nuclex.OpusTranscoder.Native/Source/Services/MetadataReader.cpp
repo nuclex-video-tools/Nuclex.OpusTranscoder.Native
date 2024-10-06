@@ -25,6 +25,8 @@ limitations under the License.
 #include <Nuclex/Support/Threading/StopToken.h>
 #include <Nuclex/Support/Threading/Thread.h>
 
+#include <Nuclex/Audio/Storage/AudioLoader.h>
+
 #include <QDir>
 
 namespace {
@@ -56,13 +58,23 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   void MetadataReader::AnalyzeAudioFile(const std::string &path) {
+    {
+      std::unique_lock<std::mutex> metadataAccessScope(this->metadataAccessMutex);
 
+      this->path = path;
+      this->metadata.reset();
+
+      StartOrRestart();
+    }
+
+    this->Updated.Emit();
   }
 
   // ------------------------------------------------------------------------------------------- //
 
   std::optional<Nuclex::Audio::TrackInfo> MetadataReader::GetMetadata() const {
-
+    std::unique_lock<std::mutex> metadataAccessScope(this->metadataAccessMutex);
+    return this->metadata;
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -70,7 +82,28 @@ namespace Nuclex::OpusTranscoder::Services {
   void MetadataReader::DoWork(
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
+    std::string path;
+    {
+      std::unique_lock<std::mutex> metadataAccessScope(this->metadataAccessMutex);
+      path.swap(this->path);
+    }
 
+    std::optional<Audio::ContainerInfo> metadata = this->loader->TryReadInfo(path);
+    {
+      std::unique_lock<std::mutex> metadataAccessScope(this->metadataAccessMutex);
+
+      // Only write the metadata if the path is still empty. If another file was selected
+      // by the user in the meantime, we don't want to bring up the wrong file's metadata.
+      if(this->path.empty()) {
+        if(metadata.has_value()) {
+          this->metadata = metadata.value().Tracks.at(0);
+        } else {
+          this->metadata.reset();
+        }
+      }
+    }
+
+    this->Updated.Emit();
   }
 
   // ------------------------------------------------------------------------------------------- //
