@@ -85,13 +85,45 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Reads the properties of the currently selected input file</summary>
     private: void readInputFileProperties();
 
+    /// <summary>Receives notifications from the metadata updater</summary>
     private: void metadataUpdatedInBackgroundThread();
+
+    /// <summary>Called in the UI thread when the input file was analyzed</summary>
     private: void updateMetadata();
 
+    /// <summary>
+    ///   Enables or disables the controls that should only appear when a valid input file
+    ///   has been selected
+    /// </summary>
+    /// <param name="enable">True to enable the controls, false to disable</param>
+    private: void enableControlsDependingOnValidInputFile(bool enable = true);
+
+    /// <summary>Shows or hides the 'nightmode' slider</summary>
+    /// <param name="show">True to show the slider, false to hide it</param>
+    private: void showNightmodeSlider(bool show = true);
+
+    /// <summary>Hides the warning frame at the bottom</summary>
+    private: void hideWarningFrame();
+
+    /// <summary>Shows a message in the warning frame at the bottom</summary>
+    /// <param name="message">Message that will be shown in the frame</param>
+    private: void showWarningFrame(const std::string &message);
+
+    /// <summary>Responds to the user entering the path to the input file</param>
+    private: void inputFileEntered();
     /// <summary>Shows the file selector when the user clicks the browse button</param>
     private: void browseInputFileClicked();
     /// <summary>Shows the file selector when the user clicks the browse button</param>
     private: void browseOutputFileClicked();
+    /// <summary>Updates the UI whe nthe user picks another output channel layout</summary>
+    /// <param name="layoutIndex">Index of the layout the user has selected</param>
+    private: void selectedOutputChannelLayoutChanged(int layoutIndex);
+    /// <summary>Updates the displayed bit rate when the bitrate slider is moved</summary>
+    /// <param name="bitrate">Bitrate the user has chosen in the slider</param>
+    private: void bitrateSliderMoved(int bitrate);
+    /// <summary>Updates the bitrate slider when the number input box changes</summary>
+    /// <param name="bitrate">Bitrate the user has entered in the input box</param>
+    private: void bitrateNumberChanged(int bitrate);
     /// <summary>Aborts the encode or quits the application depending in its state</param>
     private: void quitClicked();
 

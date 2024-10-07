@@ -22,7 +22,7 @@ limitations under the License.
 
 #include "../Config.h"
 
-#include "../Platform/SndFileApi.h"
+#include <Nuclex/Audio/ChannelPlacement.h>
 
 #include <vector>
 
@@ -40,41 +40,18 @@ namespace Nuclex::OpusTranscoder::Audio {
     public: Channel(std::size_t sampleCount = 0) :
       samples(),
       sampleRate(48000.0),
-      placement(SF_CHANNEL_MAP_INVALID) {}
+      placement(Nuclex::Audio::ChannelPlacement::Unknown) {}
 
     /// <summary>Retrieves the spatial placement of this channel</summary>
-    /// <returns>The channel's spatial placement using libsndfile's channel map</returns>
-    /// <remarks>
-    ///   SF_CHANNEL_MAP_INVALID
-    ///   SF_CHANNEL_MAP_MONO
-    ///   SF_CHANNEL_MAP_LEFT
-    ///   SF_CHANNEL_MAP_RIGHT
-    ///   SF_CHANNEL_MAP_CENTER
-    ///   SF_CHANNEL_MAP_FRONT_LEFT
-    ///   SF_CHANNEL_MAP_FRONT_RIGHT
-    ///   SF_CHANNEL_MAP_FRONT_CENTER
-    ///   SF_CHANNEL_MAP_REAR_CENTER
-    ///   SF_CHANNEL_MAP_REAR_LEFT
-    ///   SF_CHANNEL_MAP_REAR_RIGHT
-    ///   SF_CHANNEL_MAP_LFE
-    ///   SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER
-    ///   SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER
-    ///   SF_CHANNEL_MAP_SIDE_LEFT
-    ///   SF_CHANNEL_MAP_SIDE_RIGHT
-    ///   SF_CHANNEL_MAP_TOP_CENTER
-    ///   SF_CHANNEL_MAP_TOP_FRONT_LEFT
-    ///   SF_CHANNEL_MAP_TOP_FRONT_RIGHT
-    ///   SF_CHANNEL_MAP_TOP_FRONT_CENTER
-    ///   SF_CHANNEL_MAP_TOP_REAR_LEFT
-    ///   SF_CHANNEL_MAP_TOP_REAR_RIGHT
-    ///   SF_CHANNEL_MAP_TOP_REAR_CENTER
-    /// </remarks>
-    public: int GetChannelPlacement() const { return this->placement; }
+    /// <returns>The channel's spatial placement using Nuclex.Audio's flags</returns>
+    public: Nuclex::Audio::ChannelPlacement GetChannelPlacement() const {
+      return this->placement;
+    }
 
     /// <summary>Changes the spatial placement intended for the channel</summary>
-    /// <param name="placementFromLibSndFile">Spatial placement using the libsndfile map</param>
-    public: void SetChannelPlacement(int placementFromLibSndFile) {
-      this->placement = placementFromLibSndFile;
+    /// <param name="placement">Spatial placement</param>
+    public: void SetChannelPlacement(Nuclex::Audio::ChannelPlacement placement) {
+      this->placement = placement;
     }
 
     /// <summary>Retrieves the sample rate the channel is played back at</summary>
@@ -110,7 +87,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <summary>Intended playback speed in samples per second</summary>
     private: double sampleRate;
     /// <summary>Where this channel should be audible in relation to the listener</summary>
-    private: int placement;
+    private: Nuclex::Audio::ChannelPlacement placement;
 
   };
 

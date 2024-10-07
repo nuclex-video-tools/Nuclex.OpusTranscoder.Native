@@ -19,6 +19,9 @@
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QRadioButton" name="ignoreClippingOption">
+        <property name="toolTip">
+         <string>Clipping in the encoded output file should be ignored and left as-is.</string>
+        </property>
         <property name="text">
          <string>Ignore</string>
         </property>
@@ -29,6 +32,9 @@
       </item>
       <item>
        <widget class="QRadioButton" name="tuckHalfWavesOption">
+        <property name="toolTip">
+         <string>Clipping half-waves in each audio channel will be scaled down so the data fed to the Opus encoder does not clip.</string>
+        </property>
         <property name="text">
          <string>Reduce Half-Waves</string>
         </property>
@@ -36,6 +42,9 @@
       </item>
       <item>
        <widget class="QRadioButton" name="iterativeAntiClipOption">
+        <property name="toolTip">
+         <string>The encoded Opus audio file will be decoded and checked for clipping introduced by Opus itself. It will then be encoded again with appropriate adjustments and this process will be repeated until the generated Opus file has no clipping at all when it is decoded.</string>
+        </property>
         <property name="text">
          <string>Iterative Reduction</string>
         </property>
@@ -44,23 +53,41 @@
      </layout>
     </item>
     <item row="0" column="1" colspan="3">
-     <widget class="QLineEdit" name="inputPathLine"/>
+     <widget class="QLineEdit" name="inputPathLine">
+      <property name="toolTip">
+       <string>Input file path. Can be any Waveform (*.wav), FLAC (*.flac) or WavPack (*.wv) file. Press enter after entering the path to read the input file's channel layout and properties.</string>
+      </property>
+     </widget>
     </item>
     <item row="3" column="3" colspan="2">
-     <widget class="QComboBox" name="outputChannelsCombo"/>
+     <widget class="QComboBox" name="outputChannelsCombo">
+      <property name="toolTip">
+       <string>The channel layout the output Opus (*.opus) file should have. Selecting fewer channels than the input file will downmix channels as shown in the visualization panel.</string>
+      </property>
+     </widget>
     </item>
     <item row="5" column="0">
      <widget class="QLabel" name="nightModeLabel">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Nightmode is an alternative 5.1 to stereo downmix formula originating from a user on the Doom9 forums. It gives the center channel more prominence and is intended to make spoken dialogue easier to hear in the downmix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="text">
        <string>NightMode</string>
       </property>
      </widget>
     </item>
     <item row="4" column="1" colspan="4">
-     <widget class="QGraphicsView" name="channelGraphics"/>
+     <widget class="QGraphicsView" name="channelGraphics">
+      <property name="toolTip">
+       <string>Visualizes what is going to happen ot the audio channels of the input file when they're encoded in the output Opus (*.opus) file.</string>
+      </property>
+     </widget>
     </item>
     <item row="0" column="4">
      <widget class="QPushButton" name="browseInputFileButton">
+      <property name="toolTip">
+       <string>Opens a file selection dialog that lets you browse for the input file.</string>
+      </property>
       <property name="text">
        <string>Browse...</string>
       </property>
@@ -84,6 +111,9 @@
     </item>
     <item row="5" column="1" colspan="4">
      <widget class="QSlider" name="nightModeSlider">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Nightmode intensity. At zero intensity (far left) the ATSC 7.8 downmix formula is used (which is the default for most applications). At full intensity (far right), the Nightmode formula is used.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Nightmode is an alternative 5.1 to stereo downmix formula originating from a user on the Doom9 forums. It gives the center channel more prominence and is intended to make spoken dialogue easier to hear in the downmix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="maximum">
        <number>100</number>
       </property>
@@ -102,17 +132,24 @@
      </widget>
     </item>
     <item row="3" column="1" colspan="2">
-     <widget class="QComboBox" name="inputChannelsCombo"/>
+     <widget class="QComboBox" name="inputChannelsCombo">
+      <property name="toolTip">
+       <string>The channel layout of the input file.</string>
+      </property>
+     </widget>
     </item>
     <item row="7" column="1" colspan="4">
      <layout class="QHBoxLayout" name="bitrateLayout">
       <item>
        <widget class="QSlider" name="bitrateSlider">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="minimum">
          <number>64</number>
         </property>
         <property name="maximum">
-         <number>256</number>
+         <number>352</number>
         </property>
         <property name="singleStep">
          <number>4</number>
@@ -130,11 +167,14 @@
       </item>
       <item>
        <widget class="QSpinBox" name="bitrateNumber">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="minimum">
          <number>64</number>
         </property>
         <property name="maximum">
-         <number>256</number>
+         <number>352</number>
         </property>
         <property name="singleStep">
          <number>4</number>
@@ -146,6 +186,9 @@
       </item>
       <item>
        <widget class="QLabel" name="bitrateKilobitsLabel">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>KBit/s</string>
         </property>
@@ -155,6 +198,9 @@
     </item>
     <item row="6" column="0">
      <widget class="QLabel" name="antiClipLabel">
+      <property name="toolTip">
+       <string>What to do about clipping in the encoded output file</string>
+      </property>
       <property name="text">
        <string>Prevent Clipping</string>
       </property>
@@ -162,6 +208,9 @@
     </item>
     <item row="1" column="4">
      <widget class="QPushButton" name="browseOutputFileButton">
+      <property name="toolTip">
+       <string>Opens a file selection dialog in which you can pick the directory and choose a new or existing output file name for your Opus (*.opus) file.</string>
+      </property>
       <property name="text">
        <string>Browse...</string>
       </property>
@@ -169,6 +218,9 @@
     </item>
     <item row="3" column="0" rowspan="2">
      <widget class="QLabel" name="channelsLabel">
+      <property name="toolTip">
+       <string>Channel layout of the input and output files.</string>
+      </property>
       <property name="text">
        <string>Channels</string>
       </property>
@@ -216,6 +268,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>Progress of the encode process. If iterative reduction is seleted, this progress bar will fill several times because the audio file is encoded an unknown number of times until the input data has been massaged sufficiently that all clipping is gone in the decoded audio.</string>
+         </property>
          <property name="value">
           <number>24</number>
          </property>
@@ -225,10 +280,17 @@
      </widget>
     </item>
     <item row="1" column="1" colspan="3">
-     <widget class="QLineEdit" name="outputPathLine"/>
+     <widget class="QLineEdit" name="outputPathLine">
+      <property name="toolTip">
+       <string>Path in which the generated Opus (*.opus) audio file will be saved.</string>
+      </property>
+     </widget>
     </item>
     <item row="1" column="0">
      <widget class="QLabel" name="outputFileLabel">
+      <property name="toolTip">
+       <string>Opus audio file that will be the final output generated by the transcoding process.</string>
+      </property>
       <property name="text">
        <string>Output File</string>
       </property>
@@ -267,13 +329,19 @@
       </item>
       <item>
        <widget class="QPushButton" name="encodeOrCancelButton">
+        <property name="toolTip">
+         <string>Begins the transcode process.</string>
+        </property>
         <property name="text">
-         <string>Encode</string>
+         <string>Transcode</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="quitButton">
+        <property name="toolTip">
+         <string>Terminates the application.</string>
+        </property>
         <property name="text">
          <string>Quit</string>
         </property>
@@ -283,6 +351,9 @@
     </item>
     <item row="0" column="0">
      <widget class="QLabel" name="inputFileLabel">
+      <property name="toolTip">
+       <string>File that will be decoded and then encoded to the Opus audio format.</string>
+      </property>
       <property name="text">
        <string>Input File</string>
       </property>
@@ -290,6 +361,9 @@
     </item>
     <item row="7" column="0">
      <widget class="QLabel" name="bitrateLabel">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
       <property name="text">
        <string>Target Bitrate</string>
       </property>
