@@ -131,6 +131,11 @@ namespace Nuclex::OpusTranscoder {
     ui(std::make_unique<Ui::MainWindow>()) {
 
     this->ui->setupUi(this);
+    this->ui->channelGraphics->setRenderHints(
+      QPainter::RenderHint::Antialiasing |
+      QPainter::RenderHint::TextAntialiasing |
+      QPainter::RenderHint::SmoothPixmapTransform
+    );
 
     // Connect to various events from the UI widgets so we know when the user
     // wants to pick a file, changes settings or wants to begin the transcode.

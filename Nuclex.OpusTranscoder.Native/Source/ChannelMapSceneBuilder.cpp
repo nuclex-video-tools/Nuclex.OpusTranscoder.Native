@@ -107,7 +107,7 @@ namespace {
       }
       case Nuclex::Audio::ChannelPlacement::FrontCenter:
       case Nuclex::Audio::ChannelPlacement::BackCenter: {
-        return QColor(23, 156, 66); // A green that fits dark and light theme
+        return QColor(150, 23, 156); // A violet that fits dark and light theme
       }
       case Nuclex::Audio::ChannelPlacement::TopFrontLeft:
       case Nuclex::Audio::ChannelPlacement::TopBackLeft: {
@@ -119,7 +119,7 @@ namespace {
       }
       case Nuclex::Audio::ChannelPlacement::TopFrontCenter:
       case Nuclex::Audio::ChannelPlacement::TopBackCenter: {
-        return QColor(72, 139, 84);
+        return QColor(143, 74, 145);
       }
       case Nuclex::Audio::ChannelPlacement::FrontCenterLeft: {
         return QColor(60, 166, 149);
@@ -128,7 +128,8 @@ namespace {
         return QColor(191, 141, 55);
       }
       case Nuclex::Audio::ChannelPlacement::LowFrequencyEffects: {
-        return QColor(150, 23, 156); // A violet that fits dark and light theme
+        //return QColor(23, 156, 66); // A green that fits dark and light theme
+        return QColor(173, 145, 36); // A green that fits dark and light theme
       }
       default: {
         return QColor(127, 127, 127);
@@ -302,6 +303,8 @@ namespace Nuclex::OpusTranscoder {
 
       QColor foregroundColor = QApplication::palette().color(QPalette::WindowText);
       QPen linePen(foregroundColor);
+      linePen.setCosmetic(true);
+      linePen.setWidth(2);
 
       std::size_t inputIndex = 0;
       for(std::size_t bitIndex = 0; bitIndex < 17; ++bitIndex) {
