@@ -34,6 +34,9 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Looks up the image for the specified channel placement</summary>
+  /// <param name="channel">Channel placement for which to get the image path</param>
+  /// <returns>The name of the image representing the channel placement</retuns>
   std::string imageNameFromChannel(Nuclex::Audio::ChannelPlacement channel) {
     switch(channel) {
       case Nuclex::Audio::ChannelPlacement::TopFrontLeft:
@@ -87,6 +90,9 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Looks up the color that should be used to display a channel</summary>
+  /// <param name="channel">Channel placement for which to obtain the color</param>
+  /// <returns>The color in which the specified channel should be displayed</returns>
   QColor getChannelColor(Nuclex::Audio::ChannelPlacement channel) {
     switch(channel) {
       case Nuclex::Audio::ChannelPlacement::FrontLeft:
@@ -132,6 +138,9 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channel is on the left side</summary>
+  /// <param name="channel">Channel that will be checked</param>
+  /// <returns>True if the channel is on the left side</returns>
   bool isLeftChannel(Nuclex::Audio::ChannelPlacement channel) {
     return (
       (channel == Nuclex::Audio::ChannelPlacement::BackLeft) ||
@@ -145,6 +154,9 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channel is on the right side</summary>
+  /// <param name="channel">Channel that will be checked</param>
+  /// <returns>True if the channel is on the right side</returns>
   bool isRightChannel(Nuclex::Audio::ChannelPlacement channel) {
     return (
       (channel == Nuclex::Audio::ChannelPlacement::BackRight) ||
@@ -158,6 +170,9 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channel is a center channel</summary>
+  /// <param name="channel">Channel that will be checked</param>
+  /// <returns>True if the channel is a center channel</returns>
   bool isCenterChannel(Nuclex::Audio::ChannelPlacement channel) {
     return (
       (channel == Nuclex::Audio::ChannelPlacement::FrontCenter)
@@ -166,6 +181,10 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channels should be connected</summary>
+  /// <param name="from">Source channel to check for the target channel</param>
+  /// <param name="to">Target channel for which the connection is checked</param>
+  /// <returns>True if the source channel contributes to the target channel</returns>
   bool shouldConnectForMono(
     Nuclex::Audio::ChannelPlacement from, Nuclex::Audio::ChannelPlacement to
   ) {
@@ -174,6 +193,10 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channels should be connected</summary>
+  /// <param name="from">Source channel to check for the target channel</param>
+  /// <param name="to">Target channel for which the connection is checked</param>
+  /// <returns>True if the source channel contributes to the target channel</returns>
   bool shouldConnectForStereo(
     Nuclex::Audio::ChannelPlacement from, Nuclex::Audio::ChannelPlacement to
   ) {
@@ -189,6 +212,10 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Checks whether the specified channels should be connected</summary>
+  /// <param name="from">Source channel to check for the target channel</param>
+  /// <param name="to">Target channel for which the connection is checked</param>
+  /// <returns>True if the source channel contributes to the target channel</returns>
   bool shouldConnectForSurround(
     Nuclex::Audio::ChannelPlacement from, Nuclex::Audio::ChannelPlacement to
   ) {
@@ -380,7 +407,7 @@ namespace Nuclex::OpusTranscoder {
 
         startY += 48.0;
       }
-    }
+    } // for each possible channel bit
 
     return outputPins;
   }

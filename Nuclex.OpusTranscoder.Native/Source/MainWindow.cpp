@@ -463,38 +463,44 @@ namespace Nuclex::OpusTranscoder {
     // Assuming the minimum and maximum we picked amount to the same quality,
     // this will preserves the quality chosen by the user when switching from
     // stereo to surround and back.
-    int newBitrate;
     {
-      double minimumBitrate = static_cast<double>(this->ui->bitrateNumber->minimum());
-      double maximumBitrate = static_cast<double>(this->ui->bitrateNumber->maximum());
+      int newBitrate;
+      {
+        double minimumBitrate = static_cast<double>(this->ui->bitrateNumber->minimum());
+        double maximumBitrate = static_cast<double>(this->ui->bitrateNumber->maximum());
 
-      newBitrate = static_cast<int>(
-        relativeBitrate * (maximumBitrate - minimumBitrate) + minimumBitrate + 0.5
-      );
+        newBitrate = static_cast<int>(
+          relativeBitrate * (maximumBitrate - minimumBitrate) + minimumBitrate + 0.5
+        );
+      }
+
+      this->ui->bitrateNumber->setValue(newBitrate);
+      this->ui->bitrateSlider->setValue(newBitrate);
     }
 
-    this->ui->bitrateNumber->setValue(newBitrate);
-    this->ui->bitrateSlider->setValue(newBitrate);
+    // Update the illustration panel to display the output channels and
+    // which input channels will contribute to them.
+    {
+      std::unique_ptr<QGraphicsScene> scene = std::make_unique<QGraphicsScene>();
+      ChannelMapSceneBuilder::BuildScene(
+        *scene,
+        this->metadata.value().ChannelPlacements, // input channels
+        isStereo ? (
+          Audio::ChannelPlacement::FrontLeft |
+          Audio::ChannelPlacement::FrontRight
+        ) : (
+          Audio::ChannelPlacement::FrontLeft |
+          Audio::ChannelPlacement::FrontRight |
+          Audio::ChannelPlacement::FrontCenter |
+          Audio::ChannelPlacement::LowFrequencyEffects |
+          Audio::ChannelPlacement::BackLeft |
+          Audio::ChannelPlacement::BackRight
+        )
+      );
 
-    std::unique_ptr<QGraphicsScene> scene = std::make_unique<QGraphicsScene>();
-    ChannelMapSceneBuilder::BuildScene(
-      *scene,
-      this->metadata.value().ChannelPlacements, // input channels
-      isStereo ? (
-        Audio::ChannelPlacement::FrontLeft |
-        Audio::ChannelPlacement::FrontRight
-      ) : (
-        Audio::ChannelPlacement::FrontLeft |
-        Audio::ChannelPlacement::FrontRight |
-        Audio::ChannelPlacement::FrontCenter |
-        Audio::ChannelPlacement::LowFrequencyEffects |
-        Audio::ChannelPlacement::BackLeft |
-        Audio::ChannelPlacement::BackRight
-      )
-    );
-
-    this->ui->channelGraphics->setScene(scene.get());
-    this->visualizationScene.swap(scene);
+      this->ui->channelGraphics->setScene(scene.get());
+      this->visualizationScene.swap(scene);
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //

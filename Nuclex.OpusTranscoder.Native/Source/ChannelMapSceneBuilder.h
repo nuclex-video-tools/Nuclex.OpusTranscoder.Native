@@ -49,11 +49,19 @@ namespace Nuclex::OpusTranscoder {
       Nuclex::Audio::ChannelPlacement outputChannels
     );
 
+    /// <summary>Adds boxes for the input channels to the graphics scene</summary>
+    /// <param name="scene">Scene to which the input channels will be added</param>
+    /// <param name="channels">Flags for the input channels that are present</param>
+    /// <returns>A list of the Y coordinates for the input connection pins</returns>
     private: static std::vector<double> addInputChannels(
       QGraphicsScene &scene,
       Nuclex::Audio::ChannelPlacement channels
     );
 
+    /// <summary>Adds boxes for the output channels to the graphics scene</summary>
+    /// <param name="scene">Scene to which the output channels will be added</param>
+    /// <param name="channels">Flags for the output channels that are present</param>
+    /// <returns>A list of the Y coordinates for the output connection pins</returns>
     private: static std::vector<double> addOutputChannels(
       QGraphicsScene &scene,
       Nuclex::Audio::ChannelPlacement channels, double startY
