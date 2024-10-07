@@ -24,6 +24,7 @@ limitations under the License.
 #include "ui_MainWindow.h"
 #include "./Services/ServicesRoot.h"
 #include "./Services/MetadataReader.h"
+#include "./ChannelMapSceneBuilder.h"
 
 #include <QFileDialog>
 #include <QComboBox>
@@ -172,6 +173,8 @@ namespace Nuclex::OpusTranscoder {
   // ------------------------------------------------------------------------------------------- //
 
   MainWindow::~MainWindow() {
+    this->ui->channelGraphics->setScene(nullptr);
+
     if(static_cast<bool>(this->metadataReader)) {
       this->metadataReader->Updated.Unsubscribe<
         MainWindow, &MainWindow::metadataUpdatedInBackgroundThread
@@ -473,7 +476,25 @@ namespace Nuclex::OpusTranscoder {
     this->ui->bitrateNumber->setValue(newBitrate);
     this->ui->bitrateSlider->setValue(newBitrate);
 
-    // TODO: update graphics panels
+    std::unique_ptr<QGraphicsScene> scene = std::make_unique<QGraphicsScene>();
+    ChannelMapSceneBuilder::BuildScene(
+      *scene,
+      this->metadata.value().ChannelPlacements, // input channels
+      isStereo ? (
+        Audio::ChannelPlacement::FrontLeft |
+        Audio::ChannelPlacement::FrontRight
+      ) : (
+        Audio::ChannelPlacement::FrontLeft |
+        Audio::ChannelPlacement::FrontRight |
+        Audio::ChannelPlacement::FrontCenter |
+        Audio::ChannelPlacement::LowFrequencyEffects |
+        Audio::ChannelPlacement::BackLeft |
+        Audio::ChannelPlacement::BackRight
+      )
+    );
+
+    this->ui->channelGraphics->setScene(scene.get());
+    this->visualizationScene.swap(scene);
   }
 
   // ------------------------------------------------------------------------------------------- //

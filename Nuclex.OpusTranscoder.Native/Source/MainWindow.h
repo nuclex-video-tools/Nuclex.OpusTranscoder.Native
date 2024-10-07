@@ -27,6 +27,7 @@ limitations under the License.
 #include <QMainWindow> // for QMainWindow
 #include <QItemSelection> // for QItemSelection
 #include <QMutex> // for QMutex
+#include <QGraphicsScene> // for QGraphicsScene
 
 #include <memory> // for std::unique_ptr
 #include <optional> // for std::optional
@@ -129,6 +130,8 @@ namespace Nuclex::OpusTranscoder {
 
     /// <summary>The user interface arrangement generated from the .ui file</summary>
     private: std::unique_ptr<Ui::MainWindow> ui;
+    /// <summary>Visualization of the audio channel mappings</summary>
+    private: std::unique_ptr<QGraphicsScene> visualizationScene;
     /// <summary>Reader that is used to obtain metadata on the input file</summary>
     private: std::shared_ptr<Services::MetadataReader> metadataReader;
     /// <summary>Metadata for the currently selected input audio file</summary>

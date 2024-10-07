@@ -4,6 +4,16 @@
 		<file>freepik-sound-waves-512x512.png</file>
 		<file>freepik-gear-512x512.png</file>
 		<file>freepik-sound-waves-and-gear-512x512.png</file>
+		<file>svgrepo-speaker-back-center.png</file>
+		<file>svgrepo-speaker-back-left.png</file>
+		<file>svgrepo-speaker-back-right.png</file>
+		<file>svgrepo-speaker-bass.png</file>
+		<file>svgrepo-speaker-front-center.png</file>
+		<file>svgrepo-speaker-front-left.png</file>
+		<file>svgrepo-speaker-front-right.png</file>
+		<file>svgrepo-speaker-side-left.png</file>
+		<file>svgrepo-speaker-side-right.png</file>
+		<file>svgrepo-speaker-unknown.png</file>
     </qresource>
 </RCC>
 
