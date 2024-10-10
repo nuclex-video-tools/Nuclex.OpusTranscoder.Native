@@ -20,7 +20,7 @@ limitations under the License.
 // If the application is compiled as a DLL, this ensures symbols are exported
 #define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
-#include "./Track.h"
+#include "./ClippingHalfwave.h"
 
 // --------------------------------------------------------------------------------------------- //
 

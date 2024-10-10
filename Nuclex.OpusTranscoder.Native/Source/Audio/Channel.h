@@ -24,6 +24,8 @@ limitations under the License.
 
 #include <Nuclex/Audio/ChannelPlacement.h>
 
+#include "./ClippingHalfwave.h"
+
 #include <vector>
 
 namespace Nuclex::OpusTranscoder::Audio {
@@ -31,63 +33,17 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Single audio channel storing samples and placement information</summary>
-  /// <typeparam name="TSample">Type of samples the audio channel is storgin</typeparam>
-  template<typename TSample>
   class Channel {
 
-    /// <summary>Initializes a new audio channel with the specified sample count</summary>
-    /// <param name="sampleCount">Number of samples the channel starts out with</param>
-    public: Channel(std::size_t sampleCount = 0) :
-      samples(),
-      sampleRate(48000.0),
-      placement(Nuclex::Audio::ChannelPlacement::Unknown) {}
+    /// <summary>Order in which this channel will appear in the input file</summary>
+    public: std::size_t InputOrder;
+    /// <summary>Order in which this channel will appear in the Opus file</summary>
+    public: std::size_t OpusOrder;
 
-    /// <summary>Retrieves the spatial placement of this channel</summary>
-    /// <returns>The channel's spatial placement using Nuclex.Audio's flags</returns>
-    public: Nuclex::Audio::ChannelPlacement GetChannelPlacement() const {
-      return this->placement;
-    }
-
-    /// <summary>Changes the spatial placement intended for the channel</summary>
-    /// <param name="placement">Spatial placement</param>
-    public: void SetChannelPlacement(Nuclex::Audio::ChannelPlacement placement) {
-      this->placement = placement;
-    }
-
-    /// <summary>Retrieves the sample rate the channel is played back at</summary>
-    /// <returns>The channel's playback sample rate</returns>
-    public: double GetSampleRate() const { return this->sampleRate; }
-
-    /// <summary>Changes the sample rate the channel is intended to be played back at</summary>
-    /// <param name="sampleRate">New sample rate the channel should be played at</param>
-    public: void SetSampleRate(double sampleRate) {
-      this->sampleRate = sampleRate;
-    }
-
-    /// <summary>Appends samples to the channel</summary>
-    /// <param name="samples">Pointer to the first sample that will be appended</param>
-    /// <param name="count">Number of samples that will be appended in total</param>
-    /// <param name="skipCount">Number of samples to skip after each appended sample</param>
-    public: void AppendSamples(
-      const TSample *samples, std::size_t count, std::size_t skipCount = 0
-    ) {
-      std::size_t appendIndex = this->samples.size();
-      this->samples.resize(appendIndex + count);
-
-      TSample *target = this->samples.data();
-      for(std::size_t index = 0; index < count; ++index) {
-        *target = *samples;
-        ++target;
-        samples += skipCount;
-      }
-    }
-
-    /// <summary>Audio samples that describe the waveform to play back</summary>
-    private: std::vector<TSample> samples;
-    /// <summary>Intended playback speed in samples per second</summary>
-    private: double sampleRate;
-    /// <summary>Where this channel should be audible in relation to the listener</summary>
-    private: Nuclex::Audio::ChannelPlacement placement;
+    /// <summary>Placement from which this channel is supposed to play</summary>
+    public: Nuclex::Audio::ChannelPlacement Placement;
+    /// <summary>Detected clipping instances</summary>
+    public: std::vector<ClippingHalfwave> ClippingHalfwaves;
 
   };
 
