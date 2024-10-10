@@ -17,23 +17,14 @@ limitations under the License.
 */
 #pragma endregion // Apache License 2.0
 
-// If the library is compiled as a DLL, this ensures symbols are exported
+// If the application is compiled as a DLL, this ensures symbols are exported
 #define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
-#include "../../Source/Config.h"
-#include "../../Source/Audio/Channel.h"
+#include "./Track.h"
 
-#include <gtest/gtest.h>
+// --------------------------------------------------------------------------------------------- //
 
-namespace Nuclex::OpusTranscoder::Audio {
+// This file is only here to guarantee that its associated header has no hidden
+// dependencies and can be included on its own
 
-  // ------------------------------------------------------------------------------------------- //
-
-  TEST(ChannelTest, HasDefaultConstructor) {
-    Channel c;
-    (void)c;
-  }
-
-  // ------------------------------------------------------------------------------------------- //
-
-} // namespace Nuclex::OpusTranscoder::Audio
+// --------------------------------------------------------------------------------------------- //

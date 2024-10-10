@@ -306,6 +306,9 @@ namespace Nuclex::OpusTranscoder {
       linePen.setCosmetic(true);
       linePen.setWidth(2);
 
+      // And now we just go for a cheap nested loop that checks all inputs against all
+      // outputs and draws the appropriate connection lines. For 17x17 channels,
+      // or 289 checks, this is more efficient than wrangling a map or unordered_map.
       std::size_t inputIndex = 0;
       for(std::size_t bitIndex = 0; bitIndex < 17; ++bitIndex) {
         Audio::ChannelPlacement from = static_cast<Audio::ChannelPlacement>(1 << bitIndex);

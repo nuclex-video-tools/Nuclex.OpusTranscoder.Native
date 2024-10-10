@@ -52,10 +52,6 @@ namespace Nuclex::OpusTranscoder::Services {
     // ----------------------------------------------------------------------------------------- //
 
     /// <summary>Initializes a new audio metadata reader</summary>
-    /// <remarks>
-    ///   A fresh live data updater will not do any updating until it has been given
-    ///   a list of adopted processes to check on.
-    /// </remarks>
     public: MetadataReader(const std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> &loader);
     /// <summary>Stops the checking thread and frees all resources</summary>
     public: ~MetadataReader() override;
@@ -84,11 +80,11 @@ namespace Nuclex::OpusTranscoder::Services {
 
     // ----------------------------------------------------------------------------------------- //
 
-    /// <summary>Handles loading and decoding audio files</summary>
+    /// <summary>Handles loading and decoding of audio files</summary>
     private: std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> loader;
     /// <summary>Must be held when copying or updating the metadata</summary>
     private: mutable std::mutex metadataAccessMutex;
-    /// <summary>Path of the file being examines, empty when started/done</summary>
+    /// <summary>Path of the file being examined, empty when started/done</summary>
     private: std::string path;
     /// <summary>Metadata for the current audio file, if any</summary>
     private: std::optional<Nuclex::Audio::TrackInfo> metadata;

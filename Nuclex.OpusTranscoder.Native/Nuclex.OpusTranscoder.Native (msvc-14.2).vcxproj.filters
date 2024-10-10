@@ -1,50 +1,137 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
+    <Filter Include="Source">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>qml;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>qml;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx;h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Header Files">
+    <Filter Include="Source\Platform">
+      <UniqueIdentifier>{cc8c01fa-c5c0-4287-bffd-8c982cbffd34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Services">
+      <UniqueIdentifier>{7c558e0e-232d-44f9-9c27-3107dd3a5b09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>
+      </Extensions>
     </Filter>
-    <Filter Include="Resource Files">
+    <Filter Include="Resources">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>qrc;rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Form Files">
+    <Filter Include="UserInterface">
       <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
       <Extensions>ui</Extensions>
     </Filter>
-    <Filter Include="Translation Files">
+    <Filter Include="Translations">
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <QtRcc Include="QtWidgetsApplication1.qrc">
-      <Filter>Resource Files</Filter>
-    </QtRcc>
-    <QtUic Include="QtWidgetsApplication1.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
     <QtMoc Include="QtWidgetsApplication1.h">
-      <Filter>Header Files</Filter>
+      <Filter>Include</Filter>
     </QtMoc>
-    <ClCompile Include="QtWidgetsApplication1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <None Include="QtWidgetsApplication1.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <ResourceCompile Include="QtWidgetsApplication1.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Source\ChannelMapSceneBuilder.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Config.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MainWindow.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Services\MetadataReader.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Services\OpusTranscoder.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Services\ServicesRoot.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\ChannelMapSceneBuilder.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Config.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MainWindow.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Services\MetadataReader.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Services\OpusTranscoder.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Services\ServicesRoot.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="UserInterface\MainWindow.ui">
+      <Filter>UserInterface</Filter>
+    </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\freepik-gear-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\freepik-sound-waves-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\freepik-sound-waves-and-gear-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-audio.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-center.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-bass.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-bass2.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-center.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-side-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-side-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-unknown.png">
+      <Filter>Resources</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="Resources\OpusTranscoder.qrc">
+      <Filter>Resources</Filter>
+    </QtRcc>
   </ItemGroup>
 </Project>

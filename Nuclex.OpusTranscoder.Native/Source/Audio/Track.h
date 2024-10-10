@@ -17,10 +17,12 @@ limitations under the License.
 */
 #pragma endregion // Apache License 2.0
 
-#ifndef NUCLEX_OPUSTRANSCODER_AUDIO_CLIPPINGHALFWAVE_H
-#define NUCLEX_OPUSTRANSCODER_AUDIO_CLIPPINGHALFWAVE_H
+#ifndef NUCLEX_OPUSTRANSCODER_AUDIO_TRACK_H
+#define NUCLEX_OPUSTRANSCODER_AUDIO_TRACK_H
 
 #include "../Config.h"
+
+#include "./Channel.h"
 
 #include <vector>
 
@@ -28,8 +30,13 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  /// <summary>Stores informations about a clipping half-wave</summary>
-  struct ClippingHalfwave {
+  /// <summary>Audio track with all data uncompressed in memory</summary>
+  struct Track {
+
+    /// <summary>Stores the decoded samples of all channels</summary>
+    public: std::vector<float> Samples;
+    /// <summary>Data about the channels and clipping found in each of them</summary>
+    public: std::vector<Channel> Channels;
 
     /// <summary>Index of the sample at which the half-wave begins at the zero line</summary>
     public: std::size_t PriorZeroCrossingIndex;
@@ -51,4 +58,4 @@ namespace Nuclex::OpusTranscoder::Audio {
 
 } // namespace Nuclex::OpusTranscoder::Audio
 
-#endif // NUCLEX_OPUSTRANSCODER_AUDIO_CLIPPINGHALFWAVE_H
+#endif // NUCLEX_OPUSTRANSCODER_AUDIO_TRACK_H

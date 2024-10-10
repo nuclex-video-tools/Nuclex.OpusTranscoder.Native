@@ -24,7 +24,7 @@ limitations under the License.
 
 // Platform recognition
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-  #error The Nuclex.FrameFixer.Native library does not support WinRT
+  #error The Nuclex.OpusTranscoder.Native application does not support WinRT
 #elif defined(WIN32) || defined(_WIN32)
   #define NUCLEX_OPUSTRANSCODER_WINDOWS 1
 #else
@@ -36,38 +36,38 @@ limitations under the License.
 // Compiler support checking
 #if defined(_MSC_VER)
   #if (_MSC_VER < 1910) // Visual Studio 2017 has the C++17 features we use
-    #error At least Visual Studio 2017 is required to compile Nuclex.FrameFixer.Native
+    #error At least Visual Studio 2017 is required to compile Nuclex.OpusTranscoder.Native
   #elif defined(_MSVC_LANG) && (_MSVC_LANG >= 201703L)
     #define NUCLEX_OPUSTRANSCODER_CXX17 1
   #endif
 #elif defined(__clang__) && defined(__clang_major__)
   #if (__clang_major__ < 5) // clang 5.0 has the C++17 features we use
-    #error At least clang 5.0 is required to compile Nuclex.FrameFixer.Native
+    #error At least clang 5.0 is required to compile Nuclex.OpusTranscoder.Native
   #elif defined(__cplusplus) && (__cplusplus >= 201703L)
     #define NUCLEX_OPUSTRANSCODER_CXX17 1
   #endif
 #elif defined(__GNUC__)
   #if (__GNUC__ < 8) // GCC 8.0 has the C++17 features we use
-    #error At least GCC 8.0 is required to compile Nuclex.FrameFixer.Native
+    #error At least GCC 8.0 is required to compile Nuclex.OpusTranscoder.Native
   #elif defined(__cplusplus) && (__cplusplus >= 201703L)
     #define NUCLEX_OPUSTRANSCODER_CXX17 1
   #endif
 #else
-  #error Unknown compiler. Nuclex.FrameFixer.Native is tested with GCC, clang and MSVC only
+  #error Unknown compiler. Nuclex.OpusTranscoder.Native is tested with GCC, clang and MSVC only
 #endif
 
 // This library uses writable std::string::data(), 'if constexpr' and new C++17
 // containers, so anything earlier than C++ 17 will only result in compilation errors.
 #if !defined(NUCLEX_OPUSTRANSCODER_CXX17)
-  #error The Nuclex.FrameFixer.Native library must be compiled in at least C++17 mode
+  #error The Nuclex.OpusTranscoder.Native application must be compiled in at least C++17 mode
 #endif
 
 // We've got tons of u8"hello" strings that will become char8_t in C++20 and fail to build!
 // Bail out instead of letting the user scratch their head over weird compiler errors.
 #if defined(_MSVC_LANG) && (_MSVC_LANG >= 202002)
-  #error The Nuclex.FrameFixer.Native library does not work in C++20 mode yet
+  #error The Nuclex.OpusTranscoder.Native application does not work in C++20 mode yet
 #elif defined(__cplusplus) && (__cplusplus >= 202002)
-  #error The Nuclex.FrameFixer.Native library does not work in C++20 mode yet
+  #error The Nuclex.OpusTranscoder.Native application does not work in C++20 mode yet
 #endif
 
 // --------------------------------------------------------------------------------------------- //
@@ -86,8 +86,8 @@ limitations under the License.
 // --------------------------------------------------------------------------------------------- //
 
 // Decides whether symbols are imported from a dll (client app) or exported to
-// a dll (Nuclex.FrameFixer.Native library). The NUCLEX_OPUSTRANSCODER_SOURCE symbol is
-// defined by all source files of the library, so you don't have to worry about a thing.
+// a dll (Nuclex.OpusTranscoder.Native application). The NUCLEX_OPUSTRANSCODER_SOURCE symbol
+// is defined by all source files of the application, so you don't have to worry about a thing.
 #if defined(_MSC_VER)
 
   #if defined(NUCLEX_OPUSTRANSCODER_STATICLIB) || defined(NUCLEX_OPUSTRANSCODER_EXECUTABLE)
