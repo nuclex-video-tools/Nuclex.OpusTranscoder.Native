@@ -37,6 +37,48 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  const Nuclex::Audio::ChannelPlacement Stereo = (
+    Nuclex::Audio::ChannelPlacement::FrontLeft |
+    Nuclex::Audio::ChannelPlacement::FrontRight
+  );
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const Nuclex::Audio::ChannelPlacement FiveDotOne = (
+    Nuclex::Audio::ChannelPlacement::FrontLeft |
+    Nuclex::Audio::ChannelPlacement::FrontRight |
+    Nuclex::Audio::ChannelPlacement::FrontCenter |
+    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
+    Nuclex::Audio::ChannelPlacement::BackLeft |
+    Nuclex::Audio::ChannelPlacement::BackRight
+  );
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const Nuclex::Audio::ChannelPlacement SevenDotOne = (
+    Nuclex::Audio::ChannelPlacement::FrontLeft |
+    Nuclex::Audio::ChannelPlacement::FrontRight |
+    Nuclex::Audio::ChannelPlacement::FrontCenter |
+    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
+    Nuclex::Audio::ChannelPlacement::BackLeft |
+    Nuclex::Audio::ChannelPlacement::BackRight |
+    Nuclex::Audio::ChannelPlacement::SideLeft |
+    Nuclex::Audio::ChannelPlacement::SideRight
+  );
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const float Diagonal = 0.7071067811865475244008443621048490392848359376884740365883398689953662f;
+
+  // ------------------------------------------------------------------------------------------- //
+
+  float lerp(float from, float to, float t) {
+    return from * (1.0f - t) + to * t;
+    //return (to - from) * t + from;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
   // TODO: Lifted from the ChannelOrderFactory in Nuclex.Audio.Native
   //   Once I have the Encoder there implemented, it will allow me to query
   //   the interleaved channel order for encoding from there and this can go away.
@@ -163,15 +205,11 @@ namespace Nuclex::OpusTranscoder::Services {
     const std::string &outputPath,
     Nuclex::Audio::ChannelPlacement &outputChannels
   ) {
-    {
-      std::unique_lock<std::mutex> trackAccessScope(this->trackAccessMutex);
-      this->inputPath = inputPath;
-      this->outputPath = outputPath;
+    std::unique_lock<std::mutex> trackAccessScope(this->trackAccessMutex);
+    this->inputPath = inputPath;
+    this->outputPath = outputPath;
 
-      StartOrRestart();
-    }
-
-    //this->Updated.Emit();
+    StartOrRestart();
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -291,6 +329,97 @@ namespace Nuclex::OpusTranscoder::Services {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
 
+    // Currently, this transcoder only supports downmix to stereo, nothing else
+    assert((this->outputChannels == Stereo) && u8"Output layout is vanilla stereo");
+
+    struct ChannelContribution {
+      public: ChannelContribution(std::size_t offset, float factor) :
+        InterleaveOffset(offset),
+        Factor(factor) {}
+      public: std::size_t InterleaveOffset;
+      public: float Factor;
+    };
+
+    std::vector<ChannelContribution> mapping[2];
+
+    for(std::size_t index = 0; index < this->inputChannelOrder.size(); ++index) {
+      switch(this->inputChannelOrder[index]) {
+        case Nuclex::Audio::ChannelPlacement::FrontCenter: {
+          float contribution = lerp(Diagonal, 1.0f, this->nightmodeLevel);
+          mapping[0].emplace_back(index, contribution);
+          mapping[1].emplace_back(index, contribution);
+          break;
+        }
+        case Nuclex::Audio::ChannelPlacement::FrontLeft: {
+          float contribution = lerp(1.0f, 0.3f, this->nightmodeLevel);
+          mapping[0].emplace_back(index, contribution);
+          break;
+        }
+        case Nuclex::Audio::ChannelPlacement::FrontRight: {
+          float contribution = lerp(1.0f, 0.3f, this->nightmodeLevel);
+          mapping[1].emplace_back(index, contribution);
+          break;
+        }
+        case Nuclex::Audio::ChannelPlacement::SideLeft:
+        case Nuclex::Audio::ChannelPlacement::BackLeft: {
+          float contribution = lerp(Diagonal, 0.3f, this->nightmodeLevel);
+          if(6 < this->inputChannelOrder.size()) {
+            contribution /= 2.0f; // If side AND back channel present, each adds half
+          }
+          mapping[0].emplace_back(index, contribution);
+          break;
+        }
+        case Nuclex::Audio::ChannelPlacement::SideRight:
+        case Nuclex::Audio::ChannelPlacement::BackRight: {
+          float contribution = lerp(Diagonal, 0.3f, this->nightmodeLevel);
+          if(6 < this->inputChannelOrder.size()) {
+            contribution /= 2.0f; // If side AND back channel present, each adds half
+          }
+          mapping[1].emplace_back(index, contribution);
+          break;
+        }
+      }
+    }
+
+    {
+      std::size_t channelCount = this->track->Channels.size();
+      std::uint64_t frameCount = this->track->Samples.size() / channelCount;
+
+      float *write = this->track->Samples.data();
+      const float *read = write;
+      for(std::uint64_t index = 0; index < frameCount; ++index) {
+        float left = 0.0f, right = 0.0f;
+
+        for(const ChannelContribution &contribution : mapping[0]) {
+          left += read[contribution.InterleaveOffset] * contribution.Factor;
+        }
+        for(const ChannelContribution &contribution : mapping[1]) {
+          right += read[contribution.InterleaveOffset] * contribution.Factor;
+        }
+
+        write[0] = left;
+        write[1] = right;
+
+        read += channelCount;
+        write += 2;
+      }
+
+      // Now we've got stereo, truncate the samples we no longer need
+      this->track->Samples.resize(frameCount * 2);
+      this->track->Samples.shrink_to_fit();
+    }
+
+    // Set the records straight, we've downmixed the input to stereo,
+    // thus we only have two channels in a clear and defined ordering.
+    this->inputChannelOrder.clear();
+    this->inputChannelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontLeft);
+    this->inputChannelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontRight);
+    this->track->Channels.resize(2);
+    this->track->Channels[0].InputOrder = 0;
+    this->track->Channels[0].Placement = Nuclex::Audio::ChannelPlacement::FrontLeft;
+    this->track->Channels[1].InputOrder = 1;
+    this->track->Channels[1].Placement = Nuclex::Audio::ChannelPlacement::FrontLeft;
+
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -298,6 +427,41 @@ namespace Nuclex::OpusTranscoder::Services {
   void OpusTranscoder::upmixInputFile(
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
+
+    // Currently, this transcoder only supports upmix to stereo, nothing else
+    assert((this->outputChannels == Stereo) && u8"Output layout is vanilla stereo");
+    // Currently, we can only upmix mono to stereo
+    assert((this->track->Channels.size() == 1) && u8"Input layout is mono");
+
+    {
+      std::uint64_t frameCount = this->track->Samples.size();
+      this->track->Samples.resize(frameCount * 2);
+
+      // Because the data doubles in size, we have to do the in-place conversion
+      // in reverse, otherwise we'd overwrite samples. Goodbye cache prefetcher.
+      float *write = this->track->Samples.data() + (frameCount * 2) - 2;
+      const float *read = this->track->Samples.data() - 1;
+
+      for(std::uint64_t index = 0; index < frameCount; ++index) {
+        float sample = read[0];
+        write[0] = sample; // * Diagonal
+        write[1] = sample; // * Diagonal
+
+        read -= 1;
+        write -= 2;
+      }
+    }
+
+    // Set the records straight, we've downmixed the input to stereo,
+    // thus we only have two channels in a clear and defined ordering.
+    this->inputChannelOrder.clear();
+    this->inputChannelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontLeft);
+    this->inputChannelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontRight);
+    this->track->Channels.resize(2);
+    this->track->Channels[0].InputOrder = 0;
+    this->track->Channels[0].Placement = Nuclex::Audio::ChannelPlacement::FrontLeft;
+    this->track->Channels[1].InputOrder = 1;
+    this->track->Channels[1].Placement = Nuclex::Audio::ChannelPlacement::FrontLeft;
 
   }
 
