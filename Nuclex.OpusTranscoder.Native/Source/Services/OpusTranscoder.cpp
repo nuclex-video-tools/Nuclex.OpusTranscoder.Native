@@ -24,6 +24,7 @@ limitations under the License.
 
 #include <Nuclex/Support/Threading/StopToken.h>
 #include <Nuclex/Support/Threading/Thread.h>
+#include <Nuclex/Support/BitTricks.h>
 
 #include <Nuclex/Audio/Storage/AudioLoader.h>
 #include <Nuclex/Audio/Storage/AudioTrackDecoder.h>
@@ -35,6 +36,72 @@ limitations under the License.
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
+
+  // TODO: Lifted from the ChannelOrderFactory in Nuclex.Audio.Native
+  //   Once I have the Encoder there implemented, it will allow me to query
+  //   the interleaved channel order for encoding from there and this can go away.
+
+  /// <summary>
+  ///   Generates an ordered channel list according to the conventions used by
+  ///   the Vorbis specification (which also applies to Opus)
+  /// </summary>
+  /// <param name="mappingFamily">Vorbis mapping family the channels conform to</param>
+  /// <param name="channelCount">Number of audio channels in the audiop file</param>
+  /// <returns>A vector containing the audio channels in the interleaved order</returns>
+  std::vector<Nuclex::Audio::ChannelPlacement> ChannelOrderFromVorbisFamilyAndCount(
+    int mappingFamily, std::size_t channelCount
+  ) {
+    std::vector<Nuclex::Audio::ChannelPlacement> channelOrder;
+    channelOrder.reserve(channelCount);
+
+    if((mappingFamily == 0) || (mappingFamily == 1)) {
+      std::size_t originalChannelCount = channelCount;
+      if(originalChannelCount == 1) {
+        channelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontCenter);
+        --channelCount;
+      } else if(originalChannelCount < 9) {
+        channelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontLeft);
+        channelCount -= 2;
+
+        if((originalChannelCount == 3) || (originalChannelCount >= 5)) {
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontCenter);
+          --channelCount;
+        }
+
+        channelOrder.push_back(Nuclex::Audio::ChannelPlacement::FrontRight);
+
+        if(originalChannelCount >= 7) {
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::SideLeft);
+          channelCount -= 2;
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::SideRight);
+        }
+
+        if(originalChannelCount == 7) {
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::BackCenter);
+          --channelCount;
+        }
+
+        if((originalChannelCount >= 4) && (originalChannelCount != 7)) {
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::BackLeft);
+          channelCount -= 2;
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::BackRight);
+        }
+
+        if(originalChannelCount >= 6) {
+          channelOrder.push_back(Nuclex::Audio::ChannelPlacement::LowFrequencyEffects);
+          --channelCount;
+        }
+      }
+    }
+
+    while(channelCount >= 1) {
+      channelOrder.push_back(Nuclex::Audio::ChannelPlacement::Unknown);
+      --channelCount;
+    }
+
+    return channelOrder;
+  }
+
   // ------------------------------------------------------------------------------------------- //
 
 } // anonymous namespace
@@ -48,16 +115,15 @@ namespace Nuclex::OpusTranscoder::Services {
   ) :
     loader(loader),
     trackAccessMutex(),
-    inputPath(),
-    outputPath(),
-    metadata(),
-    track(),
     declip(false),
     iterativeDeclip(false),
     nightmodeLevel(0.5f),
-    outputChannels(
-      Nuclex::Audio::ChannelPlacement::FrontLeft | Nuclex::Audio::ChannelPlacement::FrontRight
-    ) {}
+    outputChannels(Nuclex::Audio::ChannelPlacement::Unknown),
+    inputPath(),
+    inputChannelOrder(),
+    track(),
+    outputPath(),
+    outputChannelOrder() {}
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -114,8 +180,26 @@ namespace Nuclex::OpusTranscoder::Services {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
 
+    // Read the entire input file with all audio samples into memory
     decodeInputFile(canceler);
 
+    // Figure out the correct output channel order for the Opus file
+    std::size_t outputChannelCount = Nuclex::Support::BitTricks::CountBits(
+      static_cast<std::size_t>(this->outputChannels)
+    );
+    this->outputChannelOrder = ChannelOrderFromVorbisFamilyAndCount(1, outputChannelCount);
+
+    // Now transform the input audio samples, downmixing, upmixing or re-weaving
+    // the interleaved channels into the correct order.
+    if(this->track->Channels.size() < outputChannelCount) {
+      upmixInputFile(canceler);
+    } else if(outputChannelCount < this->track->Channels.size()) {
+      downmixInputFile(canceler);
+    } else if(this->inputChannelOrder != this->outputChannelOrder) {
+      reweaveInputFile(canceler);
+    }
+
+    // TODO: Encode
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -142,6 +226,7 @@ namespace Nuclex::OpusTranscoder::Services {
     std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
     {
       track = std::make_shared<Nuclex::OpusTranscoder::Audio::Track>();
+
       track->Channels.resize(decoder->CountChannels());
       track->Samples.resize(decoder->CountFrames() * decoder->CountChannels());
     }
@@ -150,10 +235,10 @@ namespace Nuclex::OpusTranscoder::Services {
 
     // Remember the channel order in the input audio file (that's the one we'll read)
     {
-      std::vector<Nuclex::Audio::ChannelPlacement> channelOrder = decoder->GetChannelOrder();
+      this->inputChannelOrder = decoder->GetChannelOrder();
       for(std::size_t index = 0; index < decoder->CountChannels(); ++index) {
         track->Channels[index].InputOrder = index;
-        track->Channels[index].Placement = channelOrder[index];
+        track->Channels[index].Placement = this->inputChannelOrder[index];
       }
     }
 
@@ -194,6 +279,10 @@ namespace Nuclex::OpusTranscoder::Services {
         remainingFrameCount -= chunkSize;
       }
     }
+
+    // The track is all set up, hand it out
+    this->track.swap(track);
+
   }
 
   // ------------------------------------------------------------------------------------------- //

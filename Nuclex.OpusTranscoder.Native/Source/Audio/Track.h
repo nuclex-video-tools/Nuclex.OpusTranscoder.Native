@@ -32,7 +32,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   /// <summary>Audio track with all data uncompressed in memory</summary>
   struct Track {
-
+  
     /// <summary>Stores the decoded samples of all channels</summary>
     public: std::vector<float> Samples;
     /// <summary>Data about the channels and clipping found in each of them</summary>

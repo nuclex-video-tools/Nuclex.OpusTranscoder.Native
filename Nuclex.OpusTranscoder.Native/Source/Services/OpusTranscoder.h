@@ -154,22 +154,27 @@ namespace Nuclex::OpusTranscoder::Services {
     private: std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> loader;
     /// <summary>Must be held when accessing the paths or audio data</summary>
     private: mutable std::mutex trackAccessMutex;
-    /// <summary>Path of the file being transcoded</summary>
-    private: std::string inputPath;
-    /// <summary>Path under which the encoded Opus file will be saved</summary>
-    private: std::string outputPath;
-    /// <summary>Metadata for the current audio file, if any</summary>
-    private: std::optional<Nuclex::Audio::TrackInfo> metadata;
-    /// <summary>Stores the full decoded audio track and clipping information</summary>
-    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
     /// <summary>Whether to de-clip the input file before encoding</summary>
     private: bool declip;
     /// <summary>Whether to check the encoded Opus file for clipping, too</summary>
     private: bool iterativeDeclip;
     /// <summary>Level to which to apply the alternative Nightmode downmix formula</summary>
     private: float nightmodeLevel;
-    /// <summary>Channels that should be present in the output file</summary>
+    /// <summary>Channels that should be present in the encoded output file</summary>
     private: Nuclex::Audio::ChannelPlacement outputChannels;
+
+    /// <summary>Path of the file being transcoded</summary>
+    private: std::string inputPath;
+    /// <summary>Order in which the input channels appear</summary>
+    private: std::vector<Nuclex::Audio::ChannelPlacement> inputChannelOrder;
+
+    /// <summary>Stores the full decoded audio track and clipping information</summary>
+    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
+
+    /// <summary>Path under which the encoded Opus file will be saved</summary>
+    private: std::string outputPath;
+    /// <summary>Order in which the output channels appear</summary>
+    private: std::vector<Nuclex::Audio::ChannelPlacement> outputChannelOrder;
   
   };
 
