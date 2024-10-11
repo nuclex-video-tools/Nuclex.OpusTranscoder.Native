@@ -186,11 +186,11 @@ namespace Nuclex::OpusTranscoder {
     );
     connect(
       this->ui->encodeOrCancelButton, &QPushButton::clicked,
-      this, &MainWindow::encodeOrCancelClicked
+      this, &MainWindow::encodeOrPauseClicked
     );
     connect(
       this->ui->quitButton, &QPushButton::clicked,
-      this, &MainWindow::quitClicked
+      this, &MainWindow::abortOrQuitClicked
     );
 
     // When the application is launched, no input file is selected yet,
@@ -228,6 +228,9 @@ namespace Nuclex::OpusTranscoder {
     >(this);
     this->opusTranscoder->Progressed.Subscribe<
       MainWindow, &MainWindow::transcodingProgressedInBackgroundThread
+    >(this);
+    this->opusTranscoder->Ended.Subscribe<
+      MainWindow, &MainWindow::transcodingEndedInBackgroundThread
     >(this);
   }
 
@@ -377,6 +380,38 @@ namespace Nuclex::OpusTranscoder {
 
   // ------------------------------------------------------------------------------------------- //
 
+  void MainWindow::transcodingEndedInBackgroundThread() {
+    QMetaObject::invokeMethod(
+      this,
+      &MainWindow::handleTranscodingEnded,
+      Qt::ConnectionType::QueuedConnection
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::handleTranscodingEnded() {
+    enableControlsForConfigurationPhase();
+
+    this->ui->encodeOrCancelButton->setText(u8"Transcode");
+    this->ui->encodeOrCancelButton->setEnabled(true);
+    this->ui->quitButton->setText(u8"Quit");
+
+    this->ui->encodeProgress->setVisible(false);
+
+    std::string message = this->opusTranscoder->GetCurrentTranscodeStep();
+    this->ui->messageLabel->setText(QString::fromStdString(message));
+
+    std::optional<bool> outcome = this->opusTranscoder->GetOutcome();
+    if(outcome == true) {
+      // Set positive stylesheet
+    } else if(outcome = false) {
+      // Set negative stylesheet
+    }
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
   void MainWindow::enableControlsDependingOnValidInputFile(bool enable /* = true */) {
     this->ui->channelsLabel->setEnabled(enable);
     this->ui->inputChannelsCombo->setEnabled(enable);
@@ -392,6 +427,29 @@ namespace Nuclex::OpusTranscoder {
     this->ui->tuckHalfWavesOption->setEnabled(enable);
     this->ui->iterativeAntiClipOption->setEnabled(enable);
     this->ui->encodeOrCancelButton->setEnabled(enable);
+  }
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::enableControlsForConfigurationPhase(bool enable /* = true */) {
+    this->ui->inputFileLabel->setEnabled(enable);
+    this->ui->inputPathLine->setEnabled(enable);
+    this->ui->browseInputFileButton->setEnabled(enable);
+    this->ui->outputFileLabel->setEnabled(enable);
+    this->ui->outputPathLine->setEnabled(enable);
+    this->ui->browseOutputFileButton->setEnabled(enable);
+    this->ui->channelsLabel->setEnabled(enable);
+    this->ui->inputChannelsCombo->setEnabled(enable);
+    this->ui->outputChannelsCombo->setEnabled(enable);
+    this->ui->channelsLabel->setEnabled(enable);
+    this->ui->channelGraphics->setEnabled(enable);
+    this->ui->bitrateLabel->setEnabled(enable);
+    this->ui->bitrateSlider->setEnabled(enable);
+    this->ui->bitrateNumber->setEnabled(enable);
+    this->ui->bitrateKilobitsLabel->setEnabled(enable);
+    this->ui->antiClipLabel->setEnabled(enable);
+    this->ui->ignoreClippingOption->setEnabled(enable);
+    this->ui->tuckHalfWavesOption->setEnabled(enable);
+    this->ui->iterativeAntiClipOption->setEnabled(enable);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -589,7 +647,7 @@ namespace Nuclex::OpusTranscoder {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void MainWindow::encodeOrCancelClicked() {
+  void MainWindow::encodeOrPauseClicked() {
     if(this->ui->ignoreClippingOption->isChecked()) {
       this->opusTranscoder->EnableClippingPrevention(false);
     } else if(this->ui->tuckHalfWavesOption->isChecked()) {
@@ -604,6 +662,8 @@ namespace Nuclex::OpusTranscoder {
       static_cast<float>(this->ui->nightModeSlider->value()) / 100.0f
     );
 
+    // Figure out of the user selected 'stereo' as the output channel layout,
+    // otherwise it is 5.1 because this application only offers those two.
     bool isStereo = true;
     {
       int layoutIndex = this->ui->outputChannelsCombo->currentIndex();
@@ -613,7 +673,6 @@ namespace Nuclex::OpusTranscoder {
         }
       }
     }
-
     this->opusTranscoder->SetOutputChannels(isStereo ? Stereo : FiveDotOne);
 
     this->opusTranscoder->TranscodeAudioFile(
@@ -621,12 +680,16 @@ namespace Nuclex::OpusTranscoder {
       this->ui->inputPathLine->text().toStdString()
     );
 
-    // TODO: UI mode change
+    enableControlsForConfigurationPhase(false);
+
+    this->ui->encodeOrCancelButton->setText(u8"Pause");
+    this->ui->encodeOrCancelButton->setEnabled(false);
+    this->ui->quitButton->setText(u8"Abort");
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  void MainWindow::quitClicked() {
+  void MainWindow::abortOrQuitClicked() {
     close();
   }
 

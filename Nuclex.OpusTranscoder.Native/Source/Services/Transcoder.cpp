@@ -223,6 +223,13 @@ namespace Nuclex::OpusTranscoder::Services {
   }
 
   // ------------------------------------------------------------------------------------------- //
+  
+  std::optional<bool> Transcoder::GetOutcome() const {
+    std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
+    return this->outcome;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
 
   void Transcoder::DoWork(
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
@@ -262,7 +269,7 @@ namespace Nuclex::OpusTranscoder::Services {
   void Transcoder::decodeInputFile(
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
-    onStepBegun(u8"Opening input audio file...");
+    onStepBegun(std::string(u8"Opening input audio file...", 27));
 
     // Open a decoder for the input file
     std::shared_ptr<Nuclex::Audio::Storage::AudioTrackDecoder> decoder;
@@ -277,7 +284,7 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     canceler->ThrowIfCanceled();
-    onStepBegun(u8"Allocating memory...");
+    onStepBegun(std::string(u8"Allocating memory...", 20));
 
     // Create a track with the appropriate number of channels
     std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
@@ -289,7 +296,7 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     canceler->ThrowIfCanceled();
-    onStepBegun(u8"Decoding input audio file...");
+    onStepBegun(std::string(u8"Decoding input audio file..."));
 
     // Remember the channel order in the input audio file (that's the one we'll read)
     {
@@ -332,15 +339,15 @@ namespace Nuclex::OpusTranscoder::Services {
         decoder->DecodeInterleaved<float>(writeOffset, writeFrameIndex, chunkSize);
         canceler->ThrowIfCanceled();
 
+        writeOffset += chunkSize;
+        writeFrameIndex += chunkSize;
+        remainingFrameCount -= chunkSize;
+
         onStepProgressed(
           static_cast<float>(writeFrameIndex) / static_cast<float>(
             writeFrameIndex + remainingFrameCount
           )
         );
-
-        writeOffset += chunkSize;
-        writeFrameIndex += chunkSize;
-        remainingFrameCount -= chunkSize;
       }
     }
 
@@ -370,18 +377,18 @@ namespace Nuclex::OpusTranscoder::Services {
     // Now transform the input audio samples, downmixing, upmixing or re-weaving
     // the interleaved channels into the correct order.
     if(this->track->Channels.size() < outputChannelCount) {
-      onStepBegun(u8"Upmixing to stereo...");
+      onStepBegun(std::string(u8"Upmixing to stereo...", 21));
       ChannelLayoutTransformer::UpmixToStereo(
         this->track, canceler, progressCallback
       );
     } else if(outputChannelCount < this->track->Channels.size()) {
       if(this->outputChannels == Stereo) {
-        onStepBegun(u8"Downmixing to stereo...");
+        onStepBegun(std::string(u8"Downmixing to stereo...", 23));
         ChannelLayoutTransformer::DownmixToStereo(
           this->track, this->nightmodeLevel, canceler, progressCallback
         );
       } else if(this->outputChannels == FiveDotOne) {
-        onStepBegun(u8"Upmixing 7.1 to 5.1...");
+        onStepBegun(std::string(u8"Upmixing 7.1 to 5.1...", 22));
         ChannelLayoutTransformer::DownmixToFiveDotOne(
           this->track, canceler, progressCallback
         );
@@ -389,7 +396,7 @@ namespace Nuclex::OpusTranscoder::Services {
         throw std::runtime_error(u8"Non-standard output channel layouts are not supported");
       }
     } else if(this->inputChannelOrder != this->outputChannelOrder) {
-      onStepBegun(u8"Reordering audio channels...");
+      onStepBegun(std::string(u8"Reordering audio channels...", 28));
       ChannelLayoutTransformer::ReweaveToVorbisLayout(
         this->track, canceler, progressCallback
       );

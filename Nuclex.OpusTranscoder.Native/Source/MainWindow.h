@@ -105,12 +105,25 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Reports the reports of the audio transcoder</summary>
     private: void reportTranscodingProgress();
 
+    /// <summary>Receives progress reports from the audio transcoder</summary>
+    private: void transcodingEndedInBackgroundThread();
+
+    /// <summary>Handles the outcome of a finished transcode</summary>
+    private: void handleTranscodingEnded();
+
     /// <summary>
     ///   Enables or disables the controls that should only appear when a valid input file
     ///   has been selected
     /// </summary>
     /// <param name="enable">True to enable the controls, false to disable</param>
     private: void enableControlsDependingOnValidInputFile(bool enable = true);
+
+    /// <summary>
+    ///   Enables or disables the controls that should only be usable while the application
+    ///   is accepting configuation inputs (= outside of a running transcode)
+    /// </summary>
+    /// <param name="enable">True to enable the controls, false to disable</param>
+    private: void enableControlsForConfigurationPhase(bool enable = true);
 
     /// <summary>Shows or hides the 'nightmode' slider</summary>
     /// <param name="show">True to show the slider, false to hide it</param>
@@ -139,9 +152,9 @@ namespace Nuclex::OpusTranscoder {
     /// <param name="bitrate">Bitrate the user has entered in the input box</param>
     private: void bitrateNumberChanged(int bitrate);
     /// <summary>Transcodes the audio file or cancels the running transcode</param>
-    private: void encodeOrCancelClicked();
+    private: void encodeOrPauseClicked();
     /// <summary>Aborts the encode or quits the application depending in its state</param>
-    private: void quitClicked();
+    private: void abortOrQuitClicked();
 
     /// <summary>The user interface arrangement generated from the .ui file</summary>
     private: std::unique_ptr<Ui::MainWindow> ui;
