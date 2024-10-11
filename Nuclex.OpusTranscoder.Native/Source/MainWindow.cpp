@@ -22,8 +22,11 @@ limitations under the License.
 
 #include "./MainWindow.h"
 #include "ui_MainWindow.h"
+
 #include "./Services/ServicesRoot.h"
 #include "./Services/MetadataReader.h"
+#include "./Services/Transcoder.h"
+
 #include "./ChannelMapSceneBuilder.h"
 
 #include <QFileDialog>
@@ -31,6 +34,24 @@ limitations under the License.
 #include <QVariant>
 
 namespace {
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const Nuclex::Audio::ChannelPlacement Stereo = (
+    Nuclex::Audio::ChannelPlacement::FrontLeft |
+    Nuclex::Audio::ChannelPlacement::FrontRight
+  );
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const Nuclex::Audio::ChannelPlacement FiveDotOne = (
+    Nuclex::Audio::ChannelPlacement::FrontLeft |
+    Nuclex::Audio::ChannelPlacement::FrontRight |
+    Nuclex::Audio::ChannelPlacement::FrontCenter |
+    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
+    Nuclex::Audio::ChannelPlacement::BackLeft |
+    Nuclex::Audio::ChannelPlacement::BackRight
+  );
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -164,6 +185,10 @@ namespace Nuclex::OpusTranscoder {
       this, &MainWindow::bitrateNumberChanged
     );
     connect(
+      this->ui->encodeOrCancelButton, &QPushButton::clicked,
+      this, &MainWindow::encodeOrCancelClicked
+    );
+    connect(
       this->ui->quitButton, &QPushButton::clicked,
       this, &MainWindow::quitClicked
     );
@@ -195,6 +220,14 @@ namespace Nuclex::OpusTranscoder {
     this->metadataReader = servicesRoot->GetMetadataReader();
     this->metadataReader->Updated.Subscribe<
       MainWindow, &MainWindow::metadataUpdatedInBackgroundThread
+    >(this);
+
+    this->opusTranscoder = servicesRoot->GetOpusTranscoder();
+    this->opusTranscoder->StepBegun.Subscribe<
+      MainWindow, &MainWindow::transcodingStepBegunInBackgroundThread
+    >(this);
+    this->opusTranscoder->Progressed.Subscribe<
+      MainWindow, &MainWindow::transcodingProgressedInBackgroundThread
     >(this);
   }
 
@@ -295,6 +328,50 @@ namespace Nuclex::OpusTranscoder {
       if(!this->ui->inputPathLine->text().isEmpty()) {
         showWarningFrame(u8"Selected input file is not valid for transcoding");
       }
+    }
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::transcodingStepBegunInBackgroundThread() {
+    QMetaObject::invokeMethod(
+      this,
+      &MainWindow::reportTranscodingStep,
+      Qt::ConnectionType::QueuedConnection
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::reportTranscodingStep() {
+    std::string step = this->opusTranscoder->GetCurrentTranscodeStep();
+
+    this->ui->warningFrame->show();
+    this->ui->messageLabel->setText(QString::fromStdString(step));
+
+    reportTranscodingProgress();
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::transcodingProgressedInBackgroundThread() {
+    QMetaObject::invokeMethod(
+      this,
+      &MainWindow::reportTranscodingProgress,
+      Qt::ConnectionType::QueuedConnection
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::reportTranscodingProgress() {
+    float progress = this->opusTranscoder->GetCurrentStepProgress();
+
+    if(progress == 0.0f) {
+      this->ui->encodeProgress->hide();
+    } else {
+      this->ui->encodeProgress->show();
+      this->ui->encodeProgress->setValue(static_cast<int>(progress * 100));
     }
   }
 
@@ -490,17 +567,7 @@ namespace Nuclex::OpusTranscoder {
       ChannelMapSceneBuilder::BuildScene(
         *scene,
         this->metadata.value().ChannelPlacements, // input channels
-        isStereo ? (
-          Audio::ChannelPlacement::FrontLeft |
-          Audio::ChannelPlacement::FrontRight
-        ) : (
-          Audio::ChannelPlacement::FrontLeft |
-          Audio::ChannelPlacement::FrontRight |
-          Audio::ChannelPlacement::FrontCenter |
-          Audio::ChannelPlacement::LowFrequencyEffects |
-          Audio::ChannelPlacement::BackLeft |
-          Audio::ChannelPlacement::BackRight
-        )
+        isStereo ? Stereo : FiveDotOne
       );
 
       this->ui->channelGraphics->setScene(scene.get());
@@ -518,6 +585,43 @@ namespace Nuclex::OpusTranscoder {
 
   void MainWindow::bitrateNumberChanged(int bitrate) {
     this->ui->bitrateSlider->setValue(bitrate);
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MainWindow::encodeOrCancelClicked() {
+    if(this->ui->ignoreClippingOption->isChecked()) {
+      this->opusTranscoder->EnableClippingPrevention(false);
+    } else if(this->ui->tuckHalfWavesOption->isChecked()) {
+      this->opusTranscoder->EnableClippingPrevention();
+      this->opusTranscoder->EnableIterativeDeclipping(false);
+    } else if(this->ui->iterativeAntiClipOption->isChecked()) {
+      this->opusTranscoder->EnableClippingPrevention();
+      this->opusTranscoder->EnableIterativeDeclipping();
+    }
+
+    this->opusTranscoder->SetNightmodeLevel(
+      static_cast<float>(this->ui->nightModeSlider->value()) / 100.0f
+    );
+
+    bool isStereo = true;
+    {
+      int layoutIndex = this->ui->outputChannelsCombo->currentIndex();
+      if(this->metadata.has_value()) {
+        if(this->metadata.value().ChannelCount >= 4) {
+          isStereo = (layoutIndex == 1);
+        }
+      }
+    }
+
+    this->opusTranscoder->SetOutputChannels(isStereo ? Stereo : FiveDotOne);
+
+    this->opusTranscoder->TranscodeAudioFile(
+      this->ui->inputPathLine->text().toStdString(),
+      this->ui->inputPathLine->text().toStdString()
+    );
+
+    // TODO: UI mode change
   }
 
   // ------------------------------------------------------------------------------------------- //

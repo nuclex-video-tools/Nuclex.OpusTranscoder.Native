@@ -41,6 +41,7 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   class MetadataReader;
+  class Transcoder;
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -68,12 +69,20 @@ namespace Nuclex::OpusTranscoder::Services {
       return this->metadataReader;
     }
 
+    /// <summary>Accesses the background opus transcoder</summary>
+    /// <returns>The background opus transcoder</summary>
+    public: const std::shared_ptr<Transcoder> &GetOpusTranscoder() const {
+      return this->opusTranscoder;
+    }
+
     // ----------------------------------------------------------------------------------------- //
 
     /// <summary>Detects audio file formats and decodes audio from them</summary>
     private: std::shared_ptr<Audio::Storage::AudioLoader> audioLoader;
     /// <summary>Handles loading metadata in the background</summary>
     private: std::shared_ptr<MetadataReader> metadataReader;
+    /// <summary>Runs the transcoding process in the background</summary>
+    private: std::shared_ptr<Transcoder> opusTranscoder;
 
   };
 

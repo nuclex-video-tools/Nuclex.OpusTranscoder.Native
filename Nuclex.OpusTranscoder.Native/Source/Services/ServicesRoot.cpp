@@ -23,6 +23,8 @@ limitations under the License.
 #include "./ServicesRoot.h"
 
 #include "./MetadataReader.h"
+#include "./Transcoder.h"
+
 #include <Nuclex/Audio/Storage/AudioLoader.h>
 
 //#include <QDir>
@@ -39,10 +41,12 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   ServicesRoot::ServicesRoot() :
-    audioLoader(std::make_shared<Audio::Storage::AudioLoader>()),
-    metadataReader() {
+    audioLoader(std::make_shared<Nuclex::Audio::Storage::AudioLoader>()),
+    metadataReader(),
+    opusTranscoder() {
 
     this->metadataReader = std::make_shared<MetadataReader>(this->audioLoader);
+    this->opusTranscoder = std::make_shared<Transcoder>(this->audioLoader);
   }
 
   // ------------------------------------------------------------------------------------------- //

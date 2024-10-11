@@ -49,6 +49,7 @@ namespace Nuclex::OpusTranscoder::Services {
 
   class ServicesRoot;
   class MetadataReader;
+  class Transcoder;
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -92,6 +93,18 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Called in the UI thread when the input file was analyzed</summary>
     private: void updateMetadata();
 
+    /// <summary>Receives stage notifications from the audio transcoder</summary>
+    private: void transcodingStepBegunInBackgroundThread();
+
+    /// <summary>Displays a stage notification from the audio transcoder</summary>
+    private: void reportTranscodingStep();
+
+    /// <summary>Receives progress reports from the audio transcoder</summary>
+    private: void transcodingProgressedInBackgroundThread();
+
+    /// <summary>Reports the reports of the audio transcoder</summary>
+    private: void reportTranscodingProgress();
+
     /// <summary>
     ///   Enables or disables the controls that should only appear when a valid input file
     ///   has been selected
@@ -125,6 +138,8 @@ namespace Nuclex::OpusTranscoder {
     /// <summary>Updates the bitrate slider when the number input box changes</summary>
     /// <param name="bitrate">Bitrate the user has entered in the input box</param>
     private: void bitrateNumberChanged(int bitrate);
+    /// <summary>Transcodes the audio file or cancels the running transcode</param>
+    private: void encodeOrCancelClicked();
     /// <summary>Aborts the encode or quits the application depending in its state</param>
     private: void quitClicked();
 
@@ -134,8 +149,10 @@ namespace Nuclex::OpusTranscoder {
     private: std::unique_ptr<QGraphicsScene> visualizationScene;
     /// <summary>Reader that is used to obtain metadata on the input file</summary>
     private: std::shared_ptr<Services::MetadataReader> metadataReader;
+    /// <summary>Transcoder that performs the actual audio file conversion</summary>
+    private: std::shared_ptr<Services::Transcoder> opusTranscoder;
     /// <summary>Metadata for the currently selected input audio file</summary>
-    private: std::optional<Audio::TrackInfo> metadata;
+    private: std::optional<Nuclex::Audio::TrackInfo> metadata;
 
   };
 

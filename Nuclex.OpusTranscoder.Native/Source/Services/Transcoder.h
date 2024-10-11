@@ -17,8 +17,8 @@ limitations under the License.
 */
 #pragma endregion // Apache License 2.0
 
-#ifndef NUCLEX_OPUSTRANSCODER_SERVICES_OPUSTRANSCODER_H
-#define NUCLEX_OPUSTRANSCODER_SERVICES_OPUSTRANSCODER_H
+#ifndef NUCLEX_OPUSTRANSCODER_SERVICES_TRANSCODER_H
+#define NUCLEX_OPUSTRANSCODER_SERVICES_TRANSCODER_H
 
 #include "../Config.h"
 
@@ -54,19 +54,21 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Transcodes an input audio file into the Opus format</summary>
-  class OpusTranscoder : public Nuclex::Support::Threading::ConcurrentJob {
+  class Transcoder : public Nuclex::Support::Threading::ConcurrentJob {
 
     /// <summary>Fired when the transcoder has started a new action</summary>
-    public: Nuclex::Support::Events::ConcurrentEvent<void(const std::string &)> StepBegun;
+    public: Nuclex::Support::Events::ConcurrentEvent<void()> StepBegun;
     /// <summary>Fired when the transcoder's current action has made progress</summary>
-    public: Nuclex::Support::Events::ConcurrentEvent<void(float)> Progressed;
+    public: Nuclex::Support::Events::ConcurrentEvent<void()> Progressed;
+    /// <summary>Fired when the transcoder has shut down for whatever reason</summary>
+    public: Nuclex::Support::Events::ConcurrentEvent<void()> Ended;
 
     // ----------------------------------------------------------------------------------------- //
 
     /// <summary>Initializes a new audio metadata reader</summary>
-    public: OpusTranscoder(const std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> &loader);
+    public: Transcoder(const std::shared_ptr<Nuclex::Audio::Storage::AudioLoader> &loader);
     /// <summary>Stops the checking thread and frees all resources</summary>
-    public: ~OpusTranscoder() override;
+    public: ~Transcoder() override;
 
     // ----------------------------------------------------------------------------------------- //
 
@@ -102,17 +104,27 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <param name="channels">Channels that should be present in the output file</param>
     public: void SetOutputChannels(Nuclex::Audio::ChannelPlacement channels);
 
-    /// <summary>Analyzes the specified audio file</summary>
-    /// <param name="path">Path to the audio file that will be analyzed</param>
-    /// <remarks>
-    ///   Immediately clears the current analyzed file and begins analyzing
-    ///   the specified file, aborting any running analysis.
-    /// </remarks>
+    /// <summary>Transcodes the specified audio file to an Opus audio file</summary>
+    /// <param name="inputPath">Path to the audio file that will be transcoded</param>
+    /// <param name="outputPath">Path where the produced Opus file will be saved</param>
     public: void TranscodeAudioFile(
       const std::string &inputPath,
-      const std::string &outputPath,
-      Nuclex::Audio::ChannelPlacement &outputChannels
+      const std::string &outputPath
     );
+
+    /// <summary>Queries the step the transcoder is currently executing</summary>
+    /// <returns>A human-readable description of the currently running step<?returns>
+    public: std::string GetCurrentTranscodeStep() const;
+
+    /// <summary>Queries the progress of the currently running step</summary>
+    /// <returns>The progress of the currently running step</returns>
+    public: float GetCurrentStepProgress() const;
+
+    /// <summary>Returns whether the transcode was successful or failed</summary>
+    /// <returns>
+    ///   True if the transcoded succeeded, false if it failed, nothing if it is still ongoing
+    /// </returns>
+    public: std::optional<bool> GetOutcome() const;
 
     // ----------------------------------------------------------------------------------------- //
 
@@ -130,23 +142,23 @@ namespace Nuclex::OpusTranscoder::Services {
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
-    /// <summary>Performs a downmix of the input channels to stereo</summary>
+    /// <summary>Transforms the input channels ot the selected output layout</summary>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void downmixInputFile(
+    /// <remarks>
+    ///   This will upmix, downmix or reorder the audio samples to either of the two
+    ///   support channel layouts - stereo or 5.1 surround.
+    /// </remarks>
+    private: void transformToOutputLayout(
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
-    /// <summary>Performs an upmix of the input channel to stereo</summary>
-    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void upmixInputFile(
-      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
-    );
+    /// <summary>Reports when the transcoding step has started</summary>
+    /// <param name="stepDescription">Description of the currently running step</param>
+    private: void onStepBegun(const std::string &stepDescription);
 
-    /// <summary>Reorders the channels of the input file to the Vorbis order</summary>
-    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void reweaveInputFile(
-      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
-    );
+    /// <summary>Reports the progress of the currently running step</summary>
+    /// <param name="progress">Progress of the currently running step</param>
+    private: void onStepProgressed(float progress);
 
     // ----------------------------------------------------------------------------------------- //
 
@@ -175,11 +187,18 @@ namespace Nuclex::OpusTranscoder::Services {
     private: std::string outputPath;
     /// <summary>Order in which the output channels appear</summary>
     private: std::vector<Nuclex::Audio::ChannelPlacement> outputChannelOrder;
-  
+
+    /// <summary>Description of the currently running transcode step</summary>
+    private: std::string currentStepDescription;
+    /// <summary>Progress of the currently running transcode step</summary>
+    private: float currentStepProgress;
+    /// <summary>Success/failure state of the transcode after it finished</summary>
+    private: std::optional<bool> outcome;
+
   };
 
   // ------------------------------------------------------------------------------------------- //
 
 } // namespace Nuclex::OpusTranscoder::Services
 
-#endif // NUCLEX_OPUSTRANSCODER_SERVICES_OPUSTRANSCODER_H
+#endif // NUCLEX_OPUSTRANSCODER_SERVICES_TRANSCODER_H
