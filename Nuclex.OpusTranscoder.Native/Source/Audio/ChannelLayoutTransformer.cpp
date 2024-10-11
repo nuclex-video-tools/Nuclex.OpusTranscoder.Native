@@ -112,8 +112,8 @@ namespace Nuclex::OpusTranscoder::Audio {
     }
     
     // If the expected channels were there, we should have 3 contributions for
-    // each stereo channel now.
-    if((mapping[0].size() != 4) && (mapping[0].size() != 5)) {
+    // each stereo channel now (or 4 with split back/side channels)
+    if((mapping[0].size() != 3) && (mapping[0].size() != 4)) {
       throw std::runtime_error(
         u8"Channel layout is non-standard and can't be downmixed to stereo"
       );
@@ -143,6 +143,11 @@ namespace Nuclex::OpusTranscoder::Audio {
 
         write[0] = left;
         write[1] = right;
+
+        if((index & 0x2fff) == 0) {
+          canceler->ThrowIfCanceled();
+          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+        }
 
         read += channelCount;
         write += 2;
@@ -240,6 +245,11 @@ namespace Nuclex::OpusTranscoder::Audio {
         write[4] = (read[halfMapping[2]] + read[halfMapping[2]]) / 2.0f;
         write[5] = read[fullMapping[3]];
 
+        if((index & 0x2fff) == 0) {
+          canceler->ThrowIfCanceled();
+          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+        }
+
         read += 8;
         write += 6;
       }
@@ -293,6 +303,11 @@ namespace Nuclex::OpusTranscoder::Audio {
         float sample = read[0];
         write[0] = sample; // * Diagonal
         write[1] = sample; // * Diagonal
+
+        if((index & 0x2fff) == 0) {
+          canceler->ThrowIfCanceled();
+          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+        }
 
         read -= 1;
         write -= 2;
@@ -379,6 +394,11 @@ namespace Nuclex::OpusTranscoder::Audio {
         write[3] = temp[mapping[3]];
         write[4] = temp[mapping[4]];
         write[5] = temp[mapping[5]];
+
+        if((index & 0x2fff) == 0) {
+          canceler->ThrowIfCanceled();
+          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+        }
 
         read += 6;
         write += 6;
