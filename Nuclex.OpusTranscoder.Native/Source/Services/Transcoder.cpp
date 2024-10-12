@@ -32,6 +32,7 @@ limitations under the License.
 #include "../Audio/Track.h"
 #include "../Audio/ChannelLayoutTransformer.h"
 #include "../Audio/ClippingDetector.h"
+#include "../Audio/HalfwaveTucker.h"
 
 #include <QDir>
 
@@ -245,6 +246,12 @@ namespace Nuclex::OpusTranscoder::Services {
 
       if(this->declip) {
         findClippingHalfwaves(canceler);
+
+        if(this->iterativeDeclip) {
+
+        } else {
+          
+        }
       }
 
       // TODO: Implement rest of transcode

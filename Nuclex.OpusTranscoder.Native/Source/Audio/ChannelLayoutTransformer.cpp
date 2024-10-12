@@ -108,6 +108,7 @@ namespace Nuclex::OpusTranscoder::Audio {
           mapping[1].emplace_back(index, contribution);
           break;
         }
+        default: { break; }
       }
     }
     

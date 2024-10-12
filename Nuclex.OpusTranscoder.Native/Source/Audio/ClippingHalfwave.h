@@ -40,8 +40,9 @@ namespace Nuclex::OpusTranscoder::Audio {
       PeakIndex(peakIndex),
       NextZeroCrossingIndex(endIndex),
       IterationFirstSeen(0),
-      PriorPeakAmplitude(peakAmplitude),
-      CurrentPeakAmplitude(peakAmplitude) {}
+      CurrentPeakAmplitude(peakAmplitude),
+      PriorVolumeQuotient(0.0f),
+      CurrentVolumeQuotient(1.0f) {}
 
     /// <summary>Index of the sample at which the half-wave begins at the zero line</summary>
     public: std::uint64_t PriorZeroCrossingIndex;
@@ -56,6 +57,10 @@ namespace Nuclex::OpusTranscoder::Audio {
     public: float PriorPeakAmplitude;
     /// <summary>Peak amplitude the clipping half-wave has in this iteration</summary>
     public: float CurrentPeakAmplitude;
+    /// <summary>Quotient by which the volume was previously scaled to de-clip</summary>
+    public: float PriorVolumeQuotient;
+    /// <summary>Quotient by which the volume was scaled to de-clip the halfwave</summary>
+    public: float CurrentVolumeQuotient;
 
   };
 

@@ -32,25 +32,20 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   /// <summary>Audio track with all data uncompressed in memory</summary>
   struct Track {
+
+    ///<summary>Initializes a new audio track</summary>
+    public: Track() :
+      Samples(),
+      Channels(),
+      Iteration(0) {}
   
     /// <summary>Stores the decoded samples of all channels</summary>
     public: std::vector<float> Samples;
     /// <summary>Data about the channels and clipping found in each of them</summary>
     public: std::vector<Channel> Channels;
 
-    /// <summary>Index of the sample at which the half-wave begins at the zero line</summary>
-    public: std::size_t PriorZeroCrossingIndex;
-    /// <summary>Sample at which the half-wave has its maximum amplitude</summary>
-    public: std::size_t PeakIndex;
-    /// <summary>Index of the sample at which the half-wave ends at the zero line</summary>
-    public: std::size_t NextZeroCrossingIndex;
-
-    /// <summary>In which iteration the clipping half-wave was first detected</summary>
-    public: std::size_t IterationFirstSeen;
-    /// <summary>Peak amplitude the clipping half-wave had in the previous iteration</summary>
-    public: float PriorPeakAmplitude;
-    /// <summary>Peak amplitude the clipping half-wave has in this iteration</summary>
-    public: float CurrentPeakAmplitude;
+    /// <summary>Current iteration the iterative declipper is processing</summary>
+    public: std::size_t Iteration;
 
   };
 

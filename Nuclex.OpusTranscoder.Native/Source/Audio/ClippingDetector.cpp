@@ -84,9 +84,13 @@ namespace Nuclex::OpusTranscoder::Audio {
           canceler->ThrowIfCanceled();
           progressCallback(
             (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-            (static_cast<float>(index) / static_cast<float>(frameCount) / channelCount)
+            (
+              static_cast<float>(index) /
+              static_cast<float>(frameCount) /
+              static_cast<float>(channelCount)
+            )
           );
-        }
+        } // if progress report interval hit
       } // for each sample in the channel
 
       if(wasClipping) {
