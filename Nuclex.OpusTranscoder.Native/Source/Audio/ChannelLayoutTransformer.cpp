@@ -36,7 +36,7 @@ namespace {
   /// <param name="to">Interpolation value at 1.0</param>
   /// <param name="t">Interval between 0.0 and 1.0 to interpolate the value for</param>
   inline float lerp(float from, float to, float t) {
-    return from * (1.0f - t) + to * t;
+    return from * (1.0f - t) + to * t; // supposedly more numerically stable
     //return (to - from) * t + from;
   }
 
@@ -217,6 +217,7 @@ namespace Nuclex::OpusTranscoder::Audio {
           halfMapping[3] = index;
           break;
         }
+        default: { break; }
       }
     }
 

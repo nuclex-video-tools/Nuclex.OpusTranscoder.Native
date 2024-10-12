@@ -22,7 +22,8 @@ limitations under the License.
 
 #include "../Config.h"
 
-#include <vector>
+#include <vector> // for std::vector
+#include <cstdint> // for std::uint64_t
 
 namespace Nuclex::OpusTranscoder::Audio {
 
@@ -31,12 +32,23 @@ namespace Nuclex::OpusTranscoder::Audio {
   /// <summary>Stores informations about a clipping half-wave</summary>
   struct ClippingHalfwave {
 
+    public: ClippingHalfwave(
+      std::uint64_t startIndex, std::uint64_t peakIndex, std::uint64_t endIndex,
+      float peakAmplitude
+    ) :
+      PriorZeroCrossingIndex(startIndex),
+      PeakIndex(peakIndex),
+      NextZeroCrossingIndex(endIndex),
+      IterationFirstSeen(0),
+      PriorPeakAmplitude(peakAmplitude),
+      CurrentPeakAmplitude(peakAmplitude) {}
+
     /// <summary>Index of the sample at which the half-wave begins at the zero line</summary>
-    public: std::size_t PriorZeroCrossingIndex;
+    public: std::uint64_t PriorZeroCrossingIndex;
     /// <summary>Sample at which the half-wave has its maximum amplitude</summary>
-    public: std::size_t PeakIndex;
+    public: std::uint64_t PeakIndex;
     /// <summary>Index of the sample at which the half-wave ends at the zero line</summary>
-    public: std::size_t NextZeroCrossingIndex;
+    public: std::uint64_t NextZeroCrossingIndex;
 
     /// <summary>In which iteration the clipping half-wave was first detected</summary>
     public: std::size_t IterationFirstSeen;

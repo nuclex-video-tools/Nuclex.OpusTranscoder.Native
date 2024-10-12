@@ -31,6 +31,7 @@ limitations under the License.
 
 #include "../Audio/Track.h"
 #include "../Audio/ChannelLayoutTransformer.h"
+#include "../Audio/ClippingDetector.h"
 
 #include <QDir>
 
@@ -242,6 +243,10 @@ namespace Nuclex::OpusTranscoder::Services {
       // Downmix and/or reorder the audio channels to the Vorbis channel order
       transformToOutputLayout(canceler);
 
+      if(this->declip) {
+        findClippingHalfwaves(canceler);
+      }
+
       // TODO: Implement rest of transcode
 
     }
@@ -253,6 +258,7 @@ namespace Nuclex::OpusTranscoder::Services {
       this->outcome = false;
 
       this->Ended.Emit();
+      this->track.reset(); // to free the memory again (potentially Gigabytes)
 
       throw; //std::rethrow_exception(std::current_exception());
     }
@@ -262,6 +268,7 @@ namespace Nuclex::OpusTranscoder::Services {
     this->outcome = true;
 
     this->Ended.Emit();
+    this->track.reset(); // to free the memory again (potentially Gigabytes)
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -401,6 +408,23 @@ namespace Nuclex::OpusTranscoder::Services {
         this->track, canceler, progressCallback
       );
     }
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::findClippingHalfwaves(
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    onStepBegun(std::string(u8"Checking audio track for clipping...", 36));
+    Audio::ClippingDetector::FindClippingHalfwaves(
+      this->track, canceler, progressCallback
+    );
   }
 
   // ------------------------------------------------------------------------------------------- //

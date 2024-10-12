@@ -152,6 +152,12 @@ namespace Nuclex::OpusTranscoder::Services {
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
+    /// <summary>Looks for instances of clipping in the input file</summary>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void findClippingHalfwaves(
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
     /// <summary>Reports when the transcoding step has started</summary>
     /// <param name="stepDescription">Description of the currently running step</param>
     private: void onStepBegun(const std::string &stepDescription);
