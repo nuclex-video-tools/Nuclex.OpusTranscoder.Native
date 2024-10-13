@@ -115,7 +115,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       // record the ongoing half-wave up to the final sample as a clipping half-wave.
       if(wasClipping) {
         channel.ClippingHalfwaves.emplace_back(
-          zeroCrossingIndex, clippingPeakIndex, frameCount - 1, clippingPeak
+          zeroCrossingIndex, clippingPeakIndex, frameCount, clippingPeak
         );
       }
     } // for each channel

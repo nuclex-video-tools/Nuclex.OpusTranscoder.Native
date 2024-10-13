@@ -68,25 +68,25 @@ namespace Nuclex::OpusTranscoder::Audio {
     std::shared_ptr<Track> track = makeStereoTrack();
     track->Samples.resize(18);
 
-    track->Samples[0] = -0.1f;
-    track->Samples[2] = 0.1f;
-    track->Samples[4] = 0.3f;
-    track->Samples[6] = 0.5f;
-    track->Samples[8] = 0.3f;
-    track->Samples[10] = 0.1f;
-    track->Samples[12] = -0.1f;
-    track->Samples[14] = -0.3f;
-    track->Samples[16] = -0.5f;
+    track->Samples[0] = -0.1f;  // 0
+    track->Samples[2] = 0.1f;   // 1
+    track->Samples[4] = 0.3f;   // 2
+    track->Samples[6] = 0.5f;   // 3
+    track->Samples[8] = 0.3f;   // 4
+    track->Samples[10] = 0.1f;  // 5
+    track->Samples[12] = -0.1f; // 6
+    track->Samples[14] = -0.3f; // 7
+    track->Samples[16] = -0.5f; // 8
 
-    track->Samples[1] = 0.1f;
-    track->Samples[3] = -0.1f;
-    track->Samples[5] = -0.3f;
-    track->Samples[7] = -0.1f;
-    track->Samples[9] = 0.1f;
-    track->Samples[11] = 0.3f;
-    track->Samples[13] = 0.1f;
-    track->Samples[15] = -0.1f;
-    track->Samples[17] = -0.3f;
+    track->Samples[1] = 0.1f;   // 0
+    track->Samples[3] = -0.1f;  // 1
+    track->Samples[5] = -0.3f;  // 2
+    track->Samples[7] = -0.1f;  // 3
+    track->Samples[9] = 0.1f;   // 4
+    track->Samples[11] = 0.3f;  // 5
+    track->Samples[13] = 0.1f;  // 6
+    track->Samples[15] = -0.1f; // 7
+    track->Samples[17] = -0.3f; // 8
 
     Delegate<void(float)> progressCallback = (
       Delegate<void(float)>::Create<&doNothing>()
@@ -142,6 +142,51 @@ namespace Nuclex::OpusTranscoder::Audio {
     ASSERT_EQ(track->Channels[1].ClippingHalfwaves.size(), 1U);
     EXPECT_EQ(track->Channels[1].ClippingHalfwaves[0].PriorZeroCrossingIndex, 1);
     EXPECT_EQ(track->Channels[1].ClippingHalfwaves[0].NextZeroCrossingIndex, 8);
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  TEST(ClippingDetectorTests, ReportsClippingIntoEnding) {
+    using Nuclex::Support::Events::Delegate;
+    using Nuclex::Support::Threading::StopSource;
+    using Nuclex::Support::Threading::StopToken;
+
+    std::shared_ptr<Track> track = makeStereoTrack();
+    track->Samples.resize(18);
+
+    track->Samples[0] = 0.1f;  // 0
+    track->Samples[2] = 0.3f;  // 1
+    track->Samples[4] = 0.5f;  // 2
+    track->Samples[6] = 0.9f;  // 3
+    track->Samples[8] = 1.1f;  // 4
+    track->Samples[10] = 0.9f; // 5
+    track->Samples[12] = 0.7f; // 6
+    track->Samples[14] = 0.3f; // 7
+    track->Samples[16] = 0.1f; // 8
+
+    track->Samples[1] = 0.3f;  // 0
+    track->Samples[3] = 0.1f;  // 1
+    track->Samples[5] = -0.1f; // 2
+    track->Samples[7] = -0.3f; // 3
+    track->Samples[9] = -0.1f; // 4
+    track->Samples[11] = 0.3f; // 5
+    track->Samples[13] = 0.9f; // 6
+    track->Samples[15] = 1.3f; // 7
+    track->Samples[17] = 0.9f; // 8
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<&doNothing>()
+    );
+    ClippingDetector::FindClippingHalfwaves(
+      track, StopSource::Create()->GetToken(), progressCallback
+    );
+
+    ASSERT_EQ(track->Channels[0].ClippingHalfwaves.size(), 1U);
+    EXPECT_EQ(track->Channels[0].ClippingHalfwaves[0].PriorZeroCrossingIndex, 0);
+    EXPECT_EQ(track->Channels[0].ClippingHalfwaves[0].NextZeroCrossingIndex, 9);
+    ASSERT_EQ(track->Channels[1].ClippingHalfwaves.size(), 1U);
+    EXPECT_EQ(track->Channels[1].ClippingHalfwaves[0].PriorZeroCrossingIndex, 5);
+    EXPECT_EQ(track->Channels[1].ClippingHalfwaves[0].NextZeroCrossingIndex, 9);
   }
 
   // ------------------------------------------------------------------------------------------- //
