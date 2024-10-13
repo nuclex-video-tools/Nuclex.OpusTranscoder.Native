@@ -32,10 +32,13 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Does absolutely nothing</summary>
   void doNothing(float) {}
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Creates a new 5.1 surround track without audio samples</summary>
+  /// <returns>The new 5.1 surround track</returns>
   std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> makeFiveDotOneTrack() {
     using Nuclex::OpusTranscoder::Audio::Track;
     std::shared_ptr<Track> track = std::make_shared<Track>();
@@ -59,6 +62,8 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>Creates a new 7.1 surround track without audio samples</summary>
+  /// <returns>The new 7.1 surround track</returns>
   std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> makeSevenDotOneTrack() {
     using Nuclex::OpusTranscoder::Audio::Track;
     std::shared_ptr<Track> track = std::make_shared<Track>();
@@ -91,7 +96,7 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
-}
+} // anonymous namespace
 
 namespace Nuclex::OpusTranscoder::Audio {
 
