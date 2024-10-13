@@ -25,6 +25,12 @@ limitations under the License.
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
+
+  /// <summary>Amplitude a -0.001 dB, also useful as a factor to scale to -0.001 dB</summary>
+  const float MinusOneThousandthDecibel = (
+    0.99988487737246860830993605587529673614422529030613405900998412734419982883669222875138231966f
+  );
+
   // ------------------------------------------------------------------------------------------- //
 
 } // anonymous namespace
