@@ -33,7 +33,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Scales clipping half-waves down so they don't clip anymore</summary>
-  struct HalfwaveTucker {
+  class HalfwaveTucker {
 
     /// <summary>Tucks any half-waves that extend above the signal ceiling in</summary>
     /// <param name-"track">Track in which half-waves will be tucked</param>

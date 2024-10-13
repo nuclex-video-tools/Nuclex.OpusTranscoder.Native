@@ -34,17 +34,17 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Encodes interleaved audio samples to an in-memory Opus file</summary>
-  struct OpusEncoder {
+  class OpusEncoder {
 
     /// <summary>Encodes the specified audio track into an Opus file</summary>
     /// <param name-"track">Track in which half-waves will be tucked</param>
-    /// <param name-"target">Virtual file to write the Opus audio file contents into</param>
+    /// <param name-"setings">Encoder settings to use for the encode</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
-    public: static void Encode(
+    /// <returns>A virtual file containing the encoded Opus file contents</returns>
+    public: static std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Encode(
       const std::shared_ptr<Track> &track,
-      int sampleRate, float bitRate,
-      const std::shared_ptr<Nuclex::Audio::Storage::VirtualFile> &target,
+      float biRate,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );

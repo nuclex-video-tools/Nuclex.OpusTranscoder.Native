@@ -41,6 +41,8 @@ namespace Nuclex::OpusTranscoder::Audio {
   
     /// <summary>Stores the decoded samples of all channels</summary>
     public: std::vector<float> Samples;
+    /// <summary>Samples per second the track plays at</summary>
+    public: std::size_t SampleRate;
     /// <summary>Data about the channels and clipping found in each of them</summary>
     public: std::vector<Channel> Channels;
 

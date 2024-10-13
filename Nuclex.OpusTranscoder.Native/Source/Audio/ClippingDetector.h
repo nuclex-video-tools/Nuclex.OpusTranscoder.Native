@@ -33,7 +33,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Discovers instances of clipping in the audio signal</summary>
-  struct ClippingDetector {
+  class ClippingDetector {
 
     /// <summary>Scans all channels in the track and records instances of clipping</summary>
     /// <param name-"track">Track that will be scanned for clipping half-waves</param>

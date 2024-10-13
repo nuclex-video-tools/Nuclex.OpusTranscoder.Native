@@ -154,6 +154,7 @@ namespace Nuclex::OpusTranscoder::Services {
     iterativeDeclip(false),
     nightmodeLevel(0.5f),
     outputChannels(Nuclex::Audio::ChannelPlacement::Unknown),
+    targetBitrate(192),
     inputPath(),
     inputChannelOrder(),
     track(),
@@ -192,6 +193,12 @@ namespace Nuclex::OpusTranscoder::Services {
 
   void Transcoder::SetOutputChannels(Nuclex::Audio::ChannelPlacement channels) {
     this->outputChannels = channels;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::SetTargetBitrate(float birateInKilobits) {
+    this->targetBitrate = birateInKilobits;
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -283,6 +290,8 @@ namespace Nuclex::OpusTranscoder::Services {
   ) {
     onStepBegun(std::string(u8"Opening input audio file...", 27));
 
+    Nuclex::Audio::TrackInfo trackInfo;
+
     // Open a decoder for the input file
     std::shared_ptr<Nuclex::Audio::Storage::AudioTrackDecoder> decoder;
     {
@@ -291,6 +300,18 @@ namespace Nuclex::OpusTranscoder::Services {
         std::lock_guard<std::mutex> metadataAccessScope(this->trackAccessMutex);
         inputPath.swap(this->inputPath);
       }
+
+      // TODO: This information should be available from the decoder, too
+      std::optional<Nuclex::Audio::ContainerInfo> metadata = this->loader->TryReadInfo(
+        inputPath
+      );
+      if(!metadata.has_value()) {
+        throw std::runtime_error(u8"Unsupported file type");
+      }
+      if(metadata.value().Tracks.size() == 0) {
+        throw std::runtime_error(u8"File contains no audio streams");
+      }
+      trackInfo = metadata.value().Tracks[0];
 
       decoder = this->loader->OpenDecoder(inputPath);
     }
@@ -305,6 +326,7 @@ namespace Nuclex::OpusTranscoder::Services {
 
       track->Channels.resize(decoder->CountChannels());
       track->Samples.resize(decoder->CountFrames() * decoder->CountChannels());
+      track->SampleRate = trackInfo.SampleRate;
     }
 
     canceler->ThrowIfCanceled();
@@ -464,10 +486,9 @@ namespace Nuclex::OpusTranscoder::Services {
 
     Audio::OpusEncoder::Encode(
       this->track,
-      48000, // TODO: Obtain from settings in application
-      192.0f, // TODO: Obtain from settings in application
-      std::shared_ptr<Nuclex::Audio::Storage::VirtualFile>(),
-      canceler, progressCallback
+      this->targetBitrate,
+      canceler,
+      progressCallback
     );
   }
 

@@ -104,6 +104,10 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <param name="channels">Channels that should be present in the output file</param>
     public: void SetOutputChannels(Nuclex::Audio::ChannelPlacement channels);
 
+    /// <summary>Sets the target bitrate for the Opus file in kilobits per second</summary>
+    /// <param name="birateInKilobits">Target bitrate of the Opus file</param>
+    public: void SetTargetBitrate(float birateInKilobits);
+
     /// <summary>Transcodes the specified audio file to an Opus audio file</summary>
     /// <param name="inputPath">Path to the audio file that will be transcoded</param>
     /// <param name="outputPath">Path where the produced Opus file will be saved</param>
@@ -192,6 +196,8 @@ namespace Nuclex::OpusTranscoder::Services {
     private: float nightmodeLevel;
     /// <summary>Channels that should be present in the encoded output file</summary>
     private: Nuclex::Audio::ChannelPlacement outputChannels;
+    /// <summary>Target bitrate to encode the Opus output file to</summary>
+    private: float targetBitrate;
 
     /// <summary>Path of the file being transcoded</summary>
     private: std::string inputPath;

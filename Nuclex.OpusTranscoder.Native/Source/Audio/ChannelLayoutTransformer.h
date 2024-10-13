@@ -33,7 +33,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Changes channel layouts, upmixing, downmixing or re-weaving accordingly</summary>
-  struct ChannelLayoutTransformer {
+  class ChannelLayoutTransformer {
 
     /// <summary>Performs a downmix of the track's channels to stereo</summary>
     /// <param name-"track">Track that will be downmixed</param>

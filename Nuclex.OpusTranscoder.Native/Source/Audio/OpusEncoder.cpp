@@ -60,10 +60,9 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void OpusEncoder::Encode(
+  std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> OpusEncoder::Encode(
     const std::shared_ptr<Track> &track,
-    int sampleRate, float bitRateInKilobits,
-    const std::shared_ptr<Nuclex::Audio::Storage::VirtualFile> &target,
+    float bitRateInKilobits,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
     Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
@@ -83,6 +82,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       comments.reset(rawComments, &ope_comments_destroy);
     }
 
+    // Family 0 is mono/stereo, family 1 is surround (up to 7.1)
     int family = (track->Channels.size() == 2) ? 0 : 1;
     int error = 0;
 
@@ -90,7 +90,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     {
       OggOpusEnc *rawEncoder = ::ope_encoder_create_callbacks(
         &callbacks, &fileContents, comments.get(),
-        sampleRate, track->Channels.size(), family, &error
+        track->SampleRate, track->Channels.size(), family, &error
       );
       if(rawEncoder == nullptr) {
         throw std::runtime_error(u8"Unable to create Opus encoder");
@@ -114,11 +114,19 @@ namespace Nuclex::OpusTranscoder::Audio {
       throw std::runtime_error(u8"Unable to set application in Opus encoder");
     }
     result = ::ope_encoder_ctl(
+      encoder.get(), OPUS_SET_BANDWIDTH_REQUEST, OPUS_BANDWIDTH_FULLBAND
+    );
+    if(result != OPE_OK) {
+      throw std::runtime_error(u8"Unable to set bandwidth in Opus encoder");
+    }
+    #if 0
+    result = ::ope_encoder_ctl(
       encoder.get(), OPUS_SET_SIGNAL_REQUEST, OPUS_SIGNAL_MUSIC
     );
     if(result != OPE_OK) {
       throw std::runtime_error(u8"Unable to set signal type to music in Opus encoder");
     }
+    #endif
     result = ::ope_encoder_ctl(
       encoder.get(), OPUS_SET_COMPLEXITY_REQUEST, 10
     );
@@ -167,7 +175,8 @@ namespace Nuclex::OpusTranscoder::Audio {
 
     } // while samples to encode remain
 
-    // Finalize the stream
+    // Finalize the stream. This probably processes any input samples the opus encoder
+    // had buffered, waiting for enough data to output a full block / packet.
     result = ::ope_encoder_drain(encoder.get());
     if(result != OPE_OK) {
       throw std::runtime_error("Opus encoder could not finalize output stream");
