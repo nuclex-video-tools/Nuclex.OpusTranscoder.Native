@@ -182,6 +182,7 @@ namespace Nuclex::OpusTranscoder::Audio {
             ++index
           ) {
             *write = *read / quotient;
+
             read += channelCount;
             write += channelCount;
 

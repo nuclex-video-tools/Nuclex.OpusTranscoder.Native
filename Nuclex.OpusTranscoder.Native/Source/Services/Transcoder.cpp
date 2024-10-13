@@ -33,6 +33,7 @@ limitations under the License.
 #include "../Audio/ChannelLayoutTransformer.h"
 #include "../Audio/ClippingDetector.h"
 #include "../Audio/HalfwaveTucker.h"
+#include "../Audio/OpusEncoder.h"
 
 #include <QDir>
 
@@ -244,15 +245,12 @@ namespace Nuclex::OpusTranscoder::Services {
       // Downmix and/or reorder the audio channels to the Vorbis channel order
       transformToOutputLayout(canceler);
 
-      if(this->declip) {
+      if(this->declip && !this->iterativeDeclip) {
         findClippingHalfwaves(canceler);
-
-        if(this->iterativeDeclip) {
-
-        } else {
-          
-        }
+        declipOriginalTrack(canceler);
       }
+
+      encodeOriginalTrack(canceler);
 
       // TODO: Implement rest of transcode
 
@@ -431,6 +429,45 @@ namespace Nuclex::OpusTranscoder::Services {
     onStepBegun(std::string(u8"Checking audio track for clipping...", 36));
     Audio::ClippingDetector::FindClippingHalfwaves(
       this->track, canceler, progressCallback
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::declipOriginalTrack(
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    onStepBegun(std::string(u8"Tucking in clipping segments...", 31));
+    Audio::HalfwaveTucker::TuckClippingHalfwaves(
+      this->track, canceler, progressCallback
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::encodeOriginalTrack(
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    onStepBegun(std::string(u8"Encoding Opus audio stream...", 29));
+
+    Audio::OpusEncoder::Encode(
+      this->track,
+      48000, // TODO: Obtain from settings in application
+      192.0f, // TODO: Obtain from settings in application
+      std::shared_ptr<Nuclex::Audio::Storage::VirtualFile>(),
+      canceler, progressCallback
     );
   }
 

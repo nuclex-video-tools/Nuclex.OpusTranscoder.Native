@@ -158,6 +158,18 @@ namespace Nuclex::OpusTranscoder::Services {
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
+    /// <summary>Remvoes clipping from the original audio track</summary>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void declipOriginalTrack(
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Remvoes clipping from the original audio track</summary>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void encodeOriginalTrack(
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
     /// <summary>Reports when the transcoding step has started</summary>
     /// <param name="stepDescription">Description of the currently running step</param>
     private: void onStepBegun(const std::string &stepDescription);
