@@ -43,7 +43,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     public: static void DownmixToStereo(
-      const std::shared_ptr<Track> &track,
+      const std::shared_ptr<Track> &track, // can be 5.1 or 7.1
       float nightmodeLevel,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
@@ -54,7 +54,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     public: static void DownmixToFiveDotOne(
-      const std::shared_ptr<Track> &track,
+      const std::shared_ptr<Track> &track, // must be 7.1
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
@@ -64,7 +64,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     public: static void UpmixToStereo(
-      const std::shared_ptr<Track> &track,
+      const std::shared_ptr<Track> &track, // must be mono
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
@@ -74,7 +74,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     public: static void ReweaveToVorbisLayout(
-      const std::shared_ptr<Track> &track,
+      const std::shared_ptr<Track> &track, // must be 5.1
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );

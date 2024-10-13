@@ -52,14 +52,11 @@ namespace Nuclex::OpusTranscoder::Audio {
     const std::shared_ptr<Track> &track,
     float nightmodeLevel,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
-    Nuclex::Support::Events::Delegate<void(float)> &progressEvent
+    Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
     if((track->Channels.size() != 6) && (track->Channels.size() != 8)) {
       throw std::runtime_error(u8"Only 5.1 and 7.1 surround can be downmixed to stereo");
     }
-
-    // Note: this only checks the channel count, but not the actual channel mappings.
-    // If those are unusual or quirky, then downmix will be too quiet, too loud or empty.
 
     struct ChannelContribution {
       public: ChannelContribution(std::size_t offset, float factor) :
@@ -93,18 +90,20 @@ namespace Nuclex::OpusTranscoder::Audio {
         case Nuclex::Audio::ChannelPlacement::SideLeft:
         case Nuclex::Audio::ChannelPlacement::BackLeft: {
           float contribution = lerp(Diagonal, 0.3f, nightmodeLevel);
-          if(6 < track->Channels.size()) {
-            contribution /= 2.0f; // If side AND back channel present, each adds half
-          }
+          // Nope, side left and back left are split 50%/50% already
+          //if(6 < track->Channels.size()) {
+          //  contribution /= 2.0f; // If side AND back channel present, each adds half
+          //}
           mapping[0].emplace_back(index, contribution);
           break;
         }
         case Nuclex::Audio::ChannelPlacement::SideRight:
         case Nuclex::Audio::ChannelPlacement::BackRight: {
           float contribution = lerp(Diagonal, 0.3f, nightmodeLevel);
-          if(6 < track->Channels.size()) {
-            contribution /= 2.0f; // If side AND back channel present, each adds half
-          }
+          // Nope, side right and back right are split 50%/50% already
+          //if(6 < track->Channels.size()) {
+          //  contribution /= 2.0f; // If side AND back channel present, each adds half
+          //}
           mapping[1].emplace_back(index, contribution);
           break;
         }
@@ -147,7 +146,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
         if((index & 0x2fff) == 0) {
           canceler->ThrowIfCanceled();
-          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+          progressCallback(static_cast<float>(index) / static_cast<float>(frameCount));
         }
 
         read += channelCount;
@@ -173,7 +172,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   void ChannelLayoutTransformer::DownmixToFiveDotOne(
     const std::shared_ptr<Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
-    Nuclex::Support::Events::Delegate<void(float)> &progressEvent
+    Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
     if(track->Channels.size() != 8) {
       throw std::runtime_error(u8"Only 7.1 surround can be downmixed to 5.1 surround");
@@ -239,24 +238,43 @@ namespace Nuclex::OpusTranscoder::Audio {
 
       float *write = track->Samples.data();
       const float *read = write;
-      for(std::uint64_t index = 0; index < frameCount; ++index) {
+
+      // For the first 4 frames, we are in risk of overwriting channels if their ordering
+      // puts them in harms way (i.e. if input starts 'left'-'center'-'right' and we write
+      // 'left'-'right'-... oops, we just overwrite the original 'center' value). Since
+      // we're turned eight into six channels, after three iterations, the risk is gone.
+      for(std::uint64_t index = 0; index < std::min<std::uint64_t>(frameCount, 3); ++index) {
+        float temp[8] = { read[0], read[1], read[2], read[3], read[4], read[5], read[6], read[7] };
+        write[0] = temp[fullMapping[0]];
+        write[1] = temp[fullMapping[1]];
+        write[2] = temp[fullMapping[2]];
+        write[3] = (temp[halfMapping[0]] + temp[halfMapping[1]]);
+        write[4] = (temp[halfMapping[2]] + temp[halfMapping[3]]);
+        write[5] = temp[fullMapping[3]];
+
+        read += 8;
+        write += 6;
+      }
+
+      // From iteration 3 onwards, we don't need to copy the channels anymore.
+      for(std::uint64_t index = 3; index < frameCount; ++index) {
         write[0] = read[fullMapping[0]];
         write[1] = read[fullMapping[1]];
         write[2] = read[fullMapping[2]];
-        write[3] = (read[halfMapping[0]] + read[halfMapping[1]]) / 2.0f;
-        write[4] = (read[halfMapping[2]] + read[halfMapping[2]]) / 2.0f;
+        write[3] = (read[halfMapping[0]] + read[halfMapping[1]]);
+        write[4] = (read[halfMapping[2]] + read[halfMapping[3]]);
         write[5] = read[fullMapping[3]];
 
         if((index & 0x2fff) == 0) {
           canceler->ThrowIfCanceled();
-          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+          progressCallback(static_cast<float>(index) / static_cast<float>(frameCount));
         }
 
         read += 8;
         write += 6;
       }
 
-      // Now we've got stereo, truncate the samples we no longer need
+      // Now we've got 5.1, truncate the samples we no longer need
       track->Samples.resize(frameCount * 6);
       track->Samples.shrink_to_fit();
     }
@@ -283,7 +301,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   void ChannelLayoutTransformer::UpmixToStereo(
     const std::shared_ptr<Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
-    Nuclex::Support::Events::Delegate<void(float)> &progressEvent
+    Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
     if(track->Channels.size() != 1) {
       throw std::runtime_error(u8"Only mono can be upmixed to stereo");
@@ -299,7 +317,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       track->Samples.resize(frameCount * 2);
 
       float *write = track->Samples.data() + (frameCount * 2) - 2;
-      const float *read = track->Samples.data() - 1;
+      const float *read = track->Samples.data() + frameCount - 1;
 
       for(std::uint64_t index = 0; index < frameCount; ++index) {
         float sample = read[0];
@@ -308,7 +326,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
         if((index & 0x2fff) == 0) {
           canceler->ThrowIfCanceled();
-          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+          progressCallback(static_cast<float>(index) / static_cast<float>(frameCount));
         }
 
         read -= 1;
@@ -329,7 +347,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   void ChannelLayoutTransformer::ReweaveToVorbisLayout(
     const std::shared_ptr<Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
-    Nuclex::Support::Events::Delegate<void(float)> &progressEvent
+    Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
     if(track->Channels.size() != 6) {
       throw std::runtime_error(u8"Only 5.1 surround can be re-weaved to the Vorbis layout");
@@ -399,7 +417,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
         if((index & 0x2fff) == 0) {
           canceler->ThrowIfCanceled();
-          progressEvent(static_cast<float>(index) / static_cast<float>(frameCount));
+          progressCallback(static_cast<float>(index) / static_cast<float>(frameCount));
         }
 
         read += 6;
