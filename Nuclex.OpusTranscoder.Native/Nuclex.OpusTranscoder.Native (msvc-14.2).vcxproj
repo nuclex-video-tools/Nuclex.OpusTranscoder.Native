@@ -133,6 +133,16 @@
     <IntDir>obj\windows-msvc14.2-$(SanePlatform)-$(Configuration)\</IntDir>
     <TargetName>Nuclex.OpusTranscoder.Native</TargetName>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Link>
+      <AdditionalOptions>/NODEFAULTLIB:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalOptions>/NODEFAULTLIB:msvcrt.lib %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -237,7 +247,23 @@
     <QtRcc Include="Resources\OpusTranscoder.qrc" />
     <QtUic Include="UserInterface\MainWindow.ui" />
     <QtMoc Include="Source\MainWindow.h" />
-    <ResourceCompile Include="QtWidgetsApplication1.rc" />
+    <ResourceCompile Include="Resources\OpusTranscoder.rc" />
+    <Image Include="Resources\freepik-gear-512x512.png" />
+    <Image Include="Resources\freepik-sound-waves-512x512.png" />
+    <Image Include="Resources\freepik-sound-waves-and-gear-512x512.png" />
+    <Icon Include="Resources\freepik-sound-waves-and-gear-256x256.ico" />
+    <Image Include="Resources\svgrepo-speaker-audio.png" />
+    <Image Include="Resources\svgrepo-speaker-back-center.png" />
+    <Image Include="Resources\svgrepo-speaker-back-left.png" />
+    <Image Include="Resources\svgrepo-speaker-back-right.png" />
+    <Image Include="Resources\svgrepo-speaker-bass.png" />
+    <Image Include="Resources\svgrepo-speaker-bass2.png" />
+    <Image Include="Resources\svgrepo-speaker-front-center.png" />
+    <Image Include="Resources\svgrepo-speaker-front-left.png" />
+    <Image Include="Resources\svgrepo-speaker-front-right.png" />
+    <Image Include="Resources\svgrepo-speaker-side-left.png" />
+    <Image Include="Resources\svgrepo-speaker-side-right.png" />
+    <Image Include="Resources\svgrepo-speaker-unknown.png" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Audio\Channel.cpp" />
@@ -254,7 +280,6 @@
     <ClCompile Include="Source\Services\MetadataReader.cpp" />
     <ClCompile Include="Source\Services\ServicesRoot.cpp" />
     <ClCompile Include="Source\Services\Transcoder.cpp" />
-    <None Include="QtWidgetsApplication1.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Audio\Channel.h" />

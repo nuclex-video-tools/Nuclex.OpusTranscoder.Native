@@ -92,14 +92,9 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="QtWidgetsApplication1.rc">
+    <ResourceCompile Include="Resources\OpusTranscoder.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="QtWidgetsApplication1.ico">
-      <Filter>Resources</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Services\MetadataReader.h">
@@ -142,5 +137,52 @@
   <ItemGroup>
     <CustomBuild Include="Nuclex.Audio.Native.ref" />
     <CustomBuild Include="Nuclex.Support.Native.ref" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\freepik-gear-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\freepik-sound-waves-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\freepik-sound-waves-and-gear-512x512.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-audio.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-center.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-back-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-bass.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-bass2.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-center.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-front-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-side-left.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-side-right.png">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Resources\svgrepo-speaker-unknown.png">
+      <Filter>Resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>
