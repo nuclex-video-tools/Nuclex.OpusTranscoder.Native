@@ -674,6 +674,9 @@ namespace Nuclex::OpusTranscoder {
       }
     }
     this->opusTranscoder->SetOutputChannels(isStereo ? Stereo : FiveDotOne);
+    this->opusTranscoder->SetTargetBitrate(
+      static_cast<float>(this->ui->bitrateNumber->value())
+    );
 
     this->opusTranscoder->TranscodeAudioFile(
       this->ui->inputPathLine->text().toStdString(),

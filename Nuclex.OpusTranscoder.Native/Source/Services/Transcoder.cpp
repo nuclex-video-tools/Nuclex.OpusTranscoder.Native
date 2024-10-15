@@ -304,6 +304,7 @@ namespace Nuclex::OpusTranscoder::Services {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     onStepBegun(std::string(u8"Opening input audio file...", 27));
+    onStepProgressed(0.0f);
 
     Nuclex::Audio::TrackInfo trackInfo;
 
@@ -329,7 +330,7 @@ namespace Nuclex::OpusTranscoder::Services {
     // Create a track with the appropriate number of channels
     std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> newTrack;
     {
-      newTrack= std::make_shared<Nuclex::OpusTranscoder::Audio::Track>();
+      newTrack = std::make_shared<Nuclex::OpusTranscoder::Audio::Track>();
 
       newTrack->Channels.resize(decoder->CountChannels());
       newTrack->Samples.resize(decoder->CountFrames() * decoder->CountChannels());
@@ -352,14 +353,14 @@ namespace Nuclex::OpusTranscoder::Services {
 
     // Figure out a chunk size that is not more than 1 second (for the sole reason
     // that the user should be able to cancel the transcode without much delay)
-    std::size_t chunkSize;
+    std::size_t framesPerChunk;
     {
       std::uint64_t totalFrameCount = decoder->CountFrames();
       while(48000 < totalFrameCount) {
         totalFrameCount >>= 1;
       }
 
-      chunkSize = static_cast<std::size_t>(totalFrameCount);
+      framesPerChunk = static_cast<std::size_t>(totalFrameCount);
     }
 
     canceler->ThrowIfCanceled();
@@ -373,16 +374,16 @@ namespace Nuclex::OpusTranscoder::Services {
       std::uint64_t writeFrameIndex = 0;
 
       while(0 < remainingFrameCount) {
-        if(remainingFrameCount < chunkSize) {
-          chunkSize = static_cast<std::size_t>(remainingFrameCount);
+        if(remainingFrameCount < framesPerChunk) {
+          framesPerChunk = static_cast<std::size_t>(remainingFrameCount);
         }
 
-        decoder->DecodeInterleaved<float>(writeOffset, writeFrameIndex, chunkSize);
+        decoder->DecodeInterleaved<float>(writeOffset, writeFrameIndex, framesPerChunk);
         canceler->ThrowIfCanceled();
 
-        writeOffset += chunkSize;
-        writeFrameIndex += chunkSize;
-        remainingFrameCount -= chunkSize;
+        writeOffset += framesPerChunk * decoder->CountChannels();
+        writeFrameIndex += framesPerChunk;
+        remainingFrameCount -= framesPerChunk;
 
         onStepProgressed(
           static_cast<float>(writeFrameIndex) / static_cast<float>(
