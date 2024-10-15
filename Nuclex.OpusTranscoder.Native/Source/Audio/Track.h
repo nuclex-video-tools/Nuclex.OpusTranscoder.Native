@@ -31,7 +31,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Audio track with all data uncompressed in memory</summary>
-  struct Track {
+  class Track {
 
     ///<summary>Initializes a new audio track</summary>
     public: Track() :

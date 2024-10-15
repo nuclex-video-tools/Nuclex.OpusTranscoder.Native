@@ -21,35 +21,82 @@ limitations under the License.
 #define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
 #include "./OpusEncoder.h"
+#include <Nuclex/Audio/Storage/AudioSaver.h>
+#include <Nuclex/Audio/Storage/AudioTrackEncoderBuilder.h>
+#include <Nuclex/Audio/Storage/AudioTrackEncoder.h>
 
-#include <opusenc.h>
-
-// NOTE:
-//
-// This is just a stand-in until I have completed encoding support in Nuclex;Audio
-//
+#include <cassert> // for assert()
+#include <algorithm> // for std::copy_n()
 
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
+  // ------------------------------------------------------------------------------------------- //
 
-  int opusWrite(void *userData, const std::uint8_t *data, ::opus_int32 length) {
-    std::vector<std::byte> &fileContents = *(
-      reinterpret_cast<std::vector<std::byte> *>(userData)
-    );
-    fileContents.insert(
-      fileContents.end(),
-      reinterpret_cast<const std::byte *>(data),
-      reinterpret_cast<const std::byte *>(data + length)
-    );
-    return 0;
+  /// <summary>Serves data contained in a byte buffer as a virtual file</summary>
+  class MemoryFile : public Nuclex::Audio::Storage::VirtualFile {
+
+    /// <summary>Initializes a new memory buffer based file</summary>
+    /// <param name="contents">Memory buffer holding the data of the virtual file</param>
+    public: MemoryFile(std::vector<std::byte> &&contents) :
+      contents(std::move(contents)) {}
+
+    /// <summary>Initializes a new memory buffer based file</summary>
+    public: MemoryFile() :
+      contents() {}
+
+    /// <summary>Frees all memory used by the instance</summary>
+    public: ~MemoryFile() override = default;
+
+    /// <summary>Determines the current size of the file in bytes</summary>
+    /// <returns>The size of the file in bytes</returns>
+    public: std::uint64_t GetSize() const override { return this->contents.size(); }
+
+    /// <summary>Reads data from the file</summary>
+    /// <param name="start">Offset in the file at which to begin reading</param>
+    /// <param name="byteCount">Number of bytes that will be read</param>
+    /// <parma name="buffer">Buffer into which the data will be read</param>
+    public: void ReadAt(
+      std::uint64_t start, std::size_t byteCount, std::byte *buffer
+    ) const override;
+
+    /// <summary>Writes data into the file</summary>
+    /// <param name="start">Offset at which writing will begin in the file</param>
+    /// <param name="byteCount">Number of bytes that should be written</param>
+    /// <param name="buffer">Buffer holding the data that should be written</param>
+    public: void WriteAt(
+      std::uint64_t start, std::size_t byteCount, const std::byte *buffer
+    ) override;
+
+    /// <summary>Memory buffer the virtual file implementation is serving data from</summary>
+    private: std::vector<std::byte> contents;
+
+  };
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void MemoryFile::ReadAt(
+    std::uint64_t start, std::size_t byteCount, std::byte *buffer
+  ) const {
+    assert((start < this->contents.size()) && u8"Read starts within file boundaries");
+    assert((this->contents.size() >= start + byteCount) && u8"Read ends within file boundaries");
+    std::copy_n(this->contents.data() + start, byteCount, buffer);
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  int opusClose(void *userData) {
-    (void)userData;
-    return 0;
+  void MemoryFile::WriteAt(
+    std::uint64_t start, std::size_t byteCount, const std::byte *buffer
+  ) {
+    if(start < this->contents.size()) {
+      std::size_t byteCountToCopy = std::min(this->contents.size() - start, byteCount);
+      std::copy_n(buffer, byteCountToCopy, this->contents.data() + start);
+
+      buffer += byteCountToCopy;
+      byteCount -= byteCountToCopy;
+    }
+
+    this->contents.insert(this->contents.end(), buffer, buffer + byteCount);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -66,79 +113,29 @@ namespace Nuclex::OpusTranscoder::Audio {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
     Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
-    ::OpusEncCallbacks callbacks;
-    callbacks.write = &opusWrite;
-    callbacks.close = &opusClose;
+    Nuclex::Audio::Storage::AudioSaver saver;
 
-    std::vector<std::byte> fileContents;
+    std::shared_ptr<MemoryFile> encodedFile = std::make_shared<MemoryFile>();
 
-    std::shared_ptr<::OggOpusComments> comments;
-    {
-      ::OggOpusComments *rawComments = ::ope_comments_create();
-      if(rawComments == nullptr) {
-        throw std::runtime_error(u8"Unable to create Opus comment container");
-      }
-
-      comments.reset(rawComments, &ope_comments_destroy);
-    }
-
-    // Family 0 is mono/stereo, family 1 is surround (up to 7.1)
-    int family = (track->Channels.size() == 2) ? 0 : 1;
-    int error = 0;
-
-    std::shared_ptr<::OggOpusEnc> encoder;
-    {
-      OggOpusEnc *rawEncoder = ::ope_encoder_create_callbacks(
-        &callbacks, &fileContents, comments.get(),
-        track->SampleRate, track->Channels.size(), family, &error
-      );
-      if(rawEncoder == nullptr) {
-        throw std::runtime_error(u8"Unable to create Opus encoder");
-      }
-
-      encoder.reset(rawEncoder, &::ope_encoder_destroy);
-    }
-
-    // Set some encoder options
-    //
-    int result = ::ope_encoder_ctl(
-      encoder.get(), OPUS_SET_BITRATE_REQUEST, static_cast<int>(bitRateInKilobits * 1000.0f)
+    std::shared_ptr<Nuclex::Audio::Storage::AudioTrackEncoder> encoder = (
+      saver.ProvideBuilder(u8"Opus")->
+        SetStereoChannels().
+        SetCompressionEffort(1.0f).
+        SetSampleRate(48000).
+        SetTargetBitrate(bitRateInKilobits).
+        Build(encodedFile)
     );
-    if(result != OPE_OK) {
-      throw std::runtime_error(u8"Unable to set target bitrate of Opus encoder");
-    }
-    result = ::ope_encoder_ctl(
-      encoder.get(), OPUS_SET_APPLICATION_REQUEST, OPUS_APPLICATION_AUDIO
-    );
-    if(result != OPE_OK) {
-      throw std::runtime_error(u8"Unable to set application in Opus encoder");
-    }
-    result = ::ope_encoder_ctl(
-      encoder.get(), OPUS_SET_BANDWIDTH_REQUEST, OPUS_BANDWIDTH_FULLBAND
-    );
-    if(result != OPE_OK) {
-      throw std::runtime_error(u8"Unable to set bandwidth in Opus encoder");
-    }
-    #if 0
-    result = ::ope_encoder_ctl(
-      encoder.get(), OPUS_SET_SIGNAL_REQUEST, OPUS_SIGNAL_MUSIC
-    );
-    if(result != OPE_OK) {
-      throw std::runtime_error(u8"Unable to set signal type to music in Opus encoder");
-    }
-    #endif
-    result = ::ope_encoder_ctl(
-      encoder.get(), OPUS_SET_COMPLEXITY_REQUEST, 10
-    );
-    if(result != OPE_OK) {
-      throw std::runtime_error(u8"Unable to set quality level in Opus encoder");
-    }
 
     // The samples are already interleaved in Vorbis channel order, so we can
     // use them as-is and simply divide by the channel count to obtain the frame count.
     std::uint64_t totalFrameCount = track->Samples.size() / track->Channels.size();
     std::uint64_t remainingFrameCount = totalFrameCount;
     const float *samples = track->Samples.data();
+
+    FILE *x = fopen(u8"/srv/video/test.dat", "wb");
+    fwrite(samples, 1, track->Samples.size(), x);
+    fflush(x);
+    fclose(x);
 
     while(0 < remainingFrameCount) {
       
@@ -152,14 +149,11 @@ namespace Nuclex::OpusTranscoder::Audio {
       }
 
       // Feed the samples to the Opus encoder.
-      result = ::ope_encoder_write_float(encoder.get(), samples, frameCountInChunk);
-      if(result != OPE_OK) {
-        throw std::runtime_error("Opus encoder failed to process samples");
-      }
+      encoder->EncodeInterleaved(samples, frameCountInChunk);
 
       // The Opus encoder always processes all samples it is fed (probably keeping
       // additional samples in an internal buffer, thus the need for ope_encoder_drain()).
-      samples += frameCountInChunk;
+      samples += frameCountInChunk * track->Channels.size();
       remainingFrameCount -= frameCountInChunk;
 
       // Check if the user wants to cancel and send out a progress report
@@ -177,10 +171,9 @@ namespace Nuclex::OpusTranscoder::Audio {
 
     // Finalize the stream. This probably processes any input samples the opus encoder
     // had buffered, waiting for enough data to output a full block / packet.
-    result = ::ope_encoder_drain(encoder.get());
-    if(result != OPE_OK) {
-      throw std::runtime_error("Opus encoder could not finalize output stream");
-    }
+    encoder->Flush();
+
+    return encodedFile;
   }
 
   // ------------------------------------------------------------------------------------------- //

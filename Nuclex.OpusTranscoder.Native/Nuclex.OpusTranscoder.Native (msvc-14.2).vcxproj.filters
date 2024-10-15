@@ -28,13 +28,46 @@
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
+    <Filter Include="Source\Audio">
+      <UniqueIdentifier>{54c7e819-c303-4090-9eca-5f05f817445e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="QtWidgetsApplication1.h">
-      <Filter>Include</Filter>
+    <QtMoc Include="Source\MainWindow.h">
+      <Filter>Source</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Services\MetadataReader.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Services\ServicesRoot.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Services\Transcoder.cpp">
+      <Filter>Source\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\Channel.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\ChannelLayoutTransformer.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\ClippingDetector.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\ClippingHalfwave.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\HalfwaveTucker.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\OpusEncoder.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Audio\Track.cpp">
+      <Filter>Source\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="Source\ChannelMapSceneBuilder.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -47,35 +80,6 @@
     <ClCompile Include="Source\MainWindow.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Services\MetadataReader.cpp">
-      <Filter>Source\Services</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Services\OpusTranscoder.cpp">
-      <Filter>Source\Services</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Services\ServicesRoot.cpp">
-      <Filter>Source\Services</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Source\ChannelMapSceneBuilder.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Config.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\MainWindow.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Services\MetadataReader.h">
-      <Filter>Source\Services</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Services\OpusTranscoder.h">
-      <Filter>Source\Services</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Services\ServicesRoot.h">
-      <Filter>Source\Services</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="UserInterface\MainWindow.ui">
@@ -83,55 +87,60 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\freepik-gear-512x512.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\freepik-sound-waves-512x512.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\freepik-sound-waves-and-gear-512x512.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-audio.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-back-center.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-back-left.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-back-right.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-bass.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-bass2.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-front-center.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-front-left.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-front-right.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-side-left.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-side-right.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="Resources\svgrepo-speaker-unknown.png">
-      <Filter>Resources</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <QtRcc Include="Resources\OpusTranscoder.qrc">
       <Filter>Resources</Filter>
     </QtRcc>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="QtWidgetsApplication1.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="QtWidgetsApplication1.ico">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Services\MetadataReader.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Services\ServicesRoot.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Services\Transcoder.h">
+      <Filter>Source\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\Channel.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\ChannelLayoutTransformer.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\ClippingDetector.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\ClippingHalfwave.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\HalfwaveTucker.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\OpusEncoder.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Audio\Track.h">
+      <Filter>Source\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ChannelMapSceneBuilder.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Config.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Nuclex.Audio.Native.ref" />
+    <CustomBuild Include="Nuclex.Support.Native.ref" />
   </ItemGroup>
 </Project>

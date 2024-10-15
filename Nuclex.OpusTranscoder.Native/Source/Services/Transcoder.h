@@ -34,6 +34,7 @@ namespace Nuclex::Audio::Storage {
   // ------------------------------------------------------------------------------------------- //
 
   class AudioLoader;
+  class VirtualFile;
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -141,8 +142,10 @@ namespace Nuclex::OpusTranscoder::Services {
     // ----------------------------------------------------------------------------------------- //
 
     /// <summary>Decodes all audio samples from the input file into memory</summary>
+    /// <param name="file">File from which the Opus audio data will be decoded</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     private: void decodeInputFile(
+      const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
@@ -170,8 +173,16 @@ namespace Nuclex::OpusTranscoder::Services {
 
     /// <summary>Remvoes clipping from the original audio track</summary>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void encodeOriginalTrack(
+    private: std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodeOriginalTrack(
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Writes the contents of the specified virtual file to real file</summary>
+    /// <param name="file">File that will be written to disk</param>
+    /// <param name="outputPath">Path in which the real file will be stored</param>
+    private: void writeVirtualFileToDisk(
+      const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
+      const std::string &outputPath
     );
 
     /// <summary>Reports when the transcoding step has started</summary>

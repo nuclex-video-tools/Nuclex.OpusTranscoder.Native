@@ -135,68 +135,160 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include\;$(ProjectDir)..\Nuclex.Audio.Native\Include\;$(ProjectDir)..\Nuclex.Support.Native\Include\;$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <StringPooling>true</StringPooling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>Nuclex.OpusEncoder.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Nuclex.Audio.Native.lib;Nuclex.Support.Native.lib;synchronization.lib;$(Qt_LIBS_);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\Nuclex.Audio.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\;$(ProjectDir)..\Nuclex.Support.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include\;$(ProjectDir)..\Nuclex.Audio.Native\Include\;$(ProjectDir)..\Nuclex.Support.Native\Include\;$(ProjectDir)..\Nuclex.Support.Native\Include\;$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <StringPooling>true</StringPooling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>Nuclex.OpusEncoder.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Nuclex.Audio.Native.lib;Nuclex.Support.Native.lib;synchronization.lib;$(Qt_LIBS_);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\Nuclex.Audio.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\;$(ProjectDir)..\Nuclex.Support.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ClCompile>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include\;$(ProjectDir)..\Nuclex.Audio.Native\Include\;$(ProjectDir)..\Nuclex.Support.Native\Include\;$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>Nuclex.OpusEncoder.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Nuclex.Audio.Native.lib;Nuclex.Support.Native.lib;synchronization.lib;$(Qt_LIBS_);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\Nuclex.Audio.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\;$(ProjectDir)..\Nuclex.Support.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ClCompile>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include\;$(ProjectDir)..\Nuclex.Audio.Native\Include\;$(ProjectDir)..\Nuclex.Support.Native\Include\;$(Qt_INCLUDEPATH_)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <StringPooling>true</StringPooling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>Nuclex.OpusEncoder.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Nuclex.Audio.Native.lib;Nuclex.Support.Native.lib;synchronization.lib;$(Qt_LIBS_);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\Nuclex.Audio.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\;$(ProjectDir)..\Nuclex.Support.Native\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <QtRcc Include="QtWidgetsApplication1.qrc" />
-    <QtUic Include="QtWidgetsApplication1.ui" />
-    <QtMoc Include="QtWidgetsApplication1.h" />
-    <ClCompile Include="QtWidgetsApplication1.cpp" />
-    <ClCompile Include="main.cpp" />
-    <None Include="QtWidgetsApplication1.ico" />
+    <QtRcc Include="Resources\OpusTranscoder.qrc" />
+    <QtUic Include="UserInterface\MainWindow.ui" />
+    <QtMoc Include="Source\MainWindow.h" />
     <ResourceCompile Include="QtWidgetsApplication1.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Audio\Channel.cpp" />
+    <ClCompile Include="Source\Audio\ChannelLayoutTransformer.cpp" />
+    <ClCompile Include="Source\Audio\ClippingDetector.cpp" />
+    <ClCompile Include="Source\Audio\ClippingHalfwave.cpp" />
+    <ClCompile Include="Source\Audio\HalfwaveTucker.cpp" />
+    <ClCompile Include="Source\Audio\OpusEncoder.cpp" />
+    <ClCompile Include="Source\Audio\Track.cpp" />
+    <ClCompile Include="Source\ChannelMapSceneBuilder.cpp" />
+    <ClCompile Include="Source\Config.cpp" />
+    <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\MainWindow.cpp" />
+    <ClCompile Include="Source\Services\MetadataReader.cpp" />
+    <ClCompile Include="Source\Services\ServicesRoot.cpp" />
+    <ClCompile Include="Source\Services\Transcoder.cpp" />
+    <None Include="QtWidgetsApplication1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Audio\Channel.h" />
+    <ClInclude Include="Source\Audio\ChannelLayoutTransformer.h" />
+    <ClInclude Include="Source\Audio\ClippingDetector.h" />
+    <ClInclude Include="Source\Audio\ClippingHalfwave.h" />
+    <ClInclude Include="Source\Audio\HalfwaveTucker.h" />
+    <ClInclude Include="Source\Audio\OpusEncoder.h" />
+    <ClInclude Include="Source\Audio\Track.h" />
+    <ClInclude Include="Source\ChannelMapSceneBuilder.h" />
+    <ClInclude Include="Source\Config.h" />
+    <ClInclude Include="Source\Services\MetadataReader.h" />
+    <ClInclude Include="Source\Services\ServicesRoot.h" />
+    <ClInclude Include="Source\Services\Transcoder.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Nuclex.Audio.Native.ref">
+      <FileType>Document</FileType>
+      <Command>(IF NOT EXIST "$(TargetDir)" MKDIR "$(TargetDir)" ) &amp;&amp; COPY "$(ProjectDir)..\%(Filename)\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\Nuclex.Audio.Native.dll" "$(TargetDir)"</Command>
+      <Message>Copying %(Filename) into target directory...</Message>
+      <Outputs>$(TargetDir)Nuclex.Audio.Native.dll</Outputs>
+      <AdditionalInputs>$(ProjectDir)..\%(Filename)\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\%(Filename).dll</AdditionalInputs>
+      <LinkObjects>false</LinkObjects>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuild>
+    <CustomBuild Include="Nuclex.Support.Native.ref">
+      <FileType>Document</FileType>
+      <Command>(IF NOT EXIST "$(TargetDir)" MKDIR "$(TargetDir)" ) &amp;&amp; COPY "$(ProjectDir)..\%(Filename)\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\Nuclex.Support.Native.dll" "$(TargetDir)"</Command>
+      <Message>Copying %(Filename) into target directory...</Message>
+      <Outputs>$(TargetDir)Nuclex.Support.Native.dll</Outputs>
+      <AdditionalInputs>$(ProjectDir)..\%(Filename)\bin\windows-msvc14.2-$(SanePlatform)-$(Configuration)\%(Filename).dll</AdditionalInputs>
+      <LinkObjects>false</LinkObjects>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

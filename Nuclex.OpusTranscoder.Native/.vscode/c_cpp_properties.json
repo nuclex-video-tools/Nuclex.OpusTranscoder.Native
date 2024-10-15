@@ -6,9 +6,6 @@
                 "${workspaceFolder}/obj/cmake-Debug/NuclexOpusTranscoderNative_autogen/include/**",
                 "${workspaceFolder}/../Nuclex.Support.Native/Include/**",
                 "${workspaceFolder}/../Nuclex.Audio.Native/Include/**",
-                "${workspaceFolder}/../third-party/nuclex-opus/build/include/**",
-                "${workspaceFolder}/../third-party/nuclex-opusfile/build/include/**",
-                "${workspaceFolder}/../third-party/nuclex-opusenc/build/include/**",
                 "${workspaceFolder}/../third-party/nuclex-googletest/build/googletest/include/**",
                 "${workspaceFolder}/../third-party/nuclex-celero/build/include/**",
                 "/usr/include/qt5/**"

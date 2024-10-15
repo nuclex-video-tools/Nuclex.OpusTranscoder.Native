@@ -405,7 +405,7 @@ namespace Nuclex::OpusTranscoder {
     std::optional<bool> outcome = this->opusTranscoder->GetOutcome();
     if(outcome == true) {
       // Set positive stylesheet
-    } else if(outcome = false) {
+    } else if(outcome == false) {
       // Set negative stylesheet
     }
   }
@@ -677,7 +677,7 @@ namespace Nuclex::OpusTranscoder {
 
     this->opusTranscoder->TranscodeAudioFile(
       this->ui->inputPathLine->text().toStdString(),
-      this->ui->inputPathLine->text().toStdString()
+      this->ui->outputPathLine->text().toStdString()
     );
 
     enableControlsForConfigurationPhase(false);

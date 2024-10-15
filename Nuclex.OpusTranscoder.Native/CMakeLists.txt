@@ -80,30 +80,6 @@ if(NOT (TARGET NuclexAudioNative))
   )
 endif()
 
-# Add OPUS as a sub-project, we use it to encode OPUS audio files
-if(NOT (TARGET Opus))
-  add_subdirectory(
-    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opus
-    ${CMAKE_BINARY_DIR}/nuclex-opus
-  )
-endif()
-
-# Add OpusFile as a sub-project, we use it to encode OPUS audio files
-if(NOT (TARGET OpusFile))
-  add_subdirectory(
-    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opusfile
-    ${CMAKE_BINARY_DIR}/nuclex-opusfile
-  )
-endif()
-
-# Add OpusEnc as a sub-project, we use it to encode OPUS audio files
-if(NOT (TARGET OpusEnc))
-  add_subdirectory(
-    ${PROJECT_SOURCE_DIR}/../third-party/nuclex-opusenc
-    ${CMAKE_BINARY_DIR}/nuclex-opusenc
-  )
-endif()
-
 message(STATUS "Enabled options for Nuclex.OpusTranscoder.Native:")
 message(STATUS "  ⚫ Build core library")
 
@@ -191,9 +167,6 @@ function(add_third_party_libraries target_name)
     ${target_name}
     PUBLIC NuclexSupportNative
     PUBLIC NuclexAudioNative
-    PRIVATE Opus
-    PRIVATE OpusFile
-    PRIVATE OpusEnc
     PRIVATE Qt5::Widgets
     PRIVATE Qt5::Sql
     PRIVATE Threads::Threads

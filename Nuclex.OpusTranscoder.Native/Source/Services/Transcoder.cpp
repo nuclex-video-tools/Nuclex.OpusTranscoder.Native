@@ -185,8 +185,8 @@ namespace Nuclex::OpusTranscoder::Services {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void Transcoder::SetNightmodeLevel(float nightmodeLevel /* = 0.5f */) {
-    this->nightmodeLevel = nightmodeLevel;
+  void Transcoder::SetNightmodeLevel(float newNightmodeLevel /* = 0.5f */) {
+    this->nightmodeLevel = newNightmodeLevel;
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -204,16 +204,19 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   void Transcoder::TranscodeAudioFile(
-    const std::string &inputPath,
-    const std::string &outputPath
+    const std::string &activeInputPath,
+    const std::string &activeOutputPath
   ) {
-    std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
-    this->inputPath = inputPath;
-    this->outputPath = outputPath;
+    {
+      std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
 
-    this->outcome.reset();
-    this->currentStepDescription.assign(u8"Starting...", 11);
-    this->currentStepProgress = -1.0f;
+      this->inputPath = activeInputPath;
+      this->outputPath = activeOutputPath;
+
+      this->outcome.reset();
+      this->currentStepDescription.assign(u8"Starting...", 11);
+      this->currentStepProgress = -1.0f;
+    }
 
     StartOrRestart();
   }
@@ -245,9 +248,19 @@ namespace Nuclex::OpusTranscoder::Services {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     try {
+      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> file;
+      {
+        std::string localInputPath;
+        {
+          std::lock_guard<std::mutex> metadataAccessScope(this->trackAccessMutex);
+          localInputPath.swap(this->inputPath);
+        }
+
+        file = Nuclex::Audio::Storage::VirtualFile::OpenRealFileForReading(localInputPath);
+      }
 
       // Read the entire input file with all audio samples into memory
-      decodeInputFile(canceler);
+      decodeInputFile(file, canceler);
 
       // Downmix and/or reorder the audio channels to the Vorbis channel order
       transformToOutputLayout(canceler);
@@ -257,10 +270,11 @@ namespace Nuclex::OpusTranscoder::Services {
         declipOriginalTrack(canceler);
       }
 
-      encodeOriginalTrack(canceler);
+      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile = (
+        encodeOriginalTrack(canceler)
+      );
 
-      // TODO: Implement rest of transcode
-
+      writeVirtualFileToDisk(encodedOpusFile, this->outputPath);
     }
     catch(const std::exception &error) {
       this->currentStepDescription.assign(
@@ -286,6 +300,7 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   void Transcoder::decodeInputFile(
+    const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     onStepBegun(std::string(u8"Opening input audio file...", 27));
@@ -295,16 +310,8 @@ namespace Nuclex::OpusTranscoder::Services {
     // Open a decoder for the input file
     std::shared_ptr<Nuclex::Audio::Storage::AudioTrackDecoder> decoder;
     {
-      std::string inputPath;
-      {
-        std::lock_guard<std::mutex> metadataAccessScope(this->trackAccessMutex);
-        inputPath.swap(this->inputPath);
-      }
-
       // TODO: This information should be available from the decoder, too
-      std::optional<Nuclex::Audio::ContainerInfo> metadata = this->loader->TryReadInfo(
-        inputPath
-      );
+      std::optional<Nuclex::Audio::ContainerInfo> metadata = this->loader->TryReadInfo(file);
       if(!metadata.has_value()) {
         throw std::runtime_error(u8"Unsupported file type");
       }
@@ -313,20 +320,20 @@ namespace Nuclex::OpusTranscoder::Services {
       }
       trackInfo = metadata.value().Tracks[0];
 
-      decoder = this->loader->OpenDecoder(inputPath);
+      decoder = this->loader->OpenDecoder(file);
     }
 
     canceler->ThrowIfCanceled();
     onStepBegun(std::string(u8"Allocating memory...", 20));
 
     // Create a track with the appropriate number of channels
-    std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
+    std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> newTrack;
     {
-      track = std::make_shared<Nuclex::OpusTranscoder::Audio::Track>();
+      newTrack= std::make_shared<Nuclex::OpusTranscoder::Audio::Track>();
 
-      track->Channels.resize(decoder->CountChannels());
-      track->Samples.resize(decoder->CountFrames() * decoder->CountChannels());
-      track->SampleRate = trackInfo.SampleRate;
+      newTrack->Channels.resize(decoder->CountChannels());
+      newTrack->Samples.resize(decoder->CountFrames() * decoder->CountChannels());
+      newTrack->SampleRate = trackInfo.SampleRate;
     }
 
     canceler->ThrowIfCanceled();
@@ -336,8 +343,8 @@ namespace Nuclex::OpusTranscoder::Services {
     {
       this->inputChannelOrder = decoder->GetChannelOrder();
       for(std::size_t index = 0; index < decoder->CountChannels(); ++index) {
-        track->Channels[index].InputOrder = index;
-        track->Channels[index].Placement = this->inputChannelOrder[index];
+        newTrack->Channels[index].InputOrder = index;
+        newTrack->Channels[index].Placement = this->inputChannelOrder[index];
       }
     }
 
@@ -362,7 +369,7 @@ namespace Nuclex::OpusTranscoder::Services {
     {
       std::uint64_t remainingFrameCount = decoder->CountFrames();
 
-      float *writeOffset = track->Samples.data();
+      float *writeOffset = newTrack->Samples.data();
       std::uint64_t writeFrameIndex = 0;
 
       while(0 < remainingFrameCount) {
@@ -386,8 +393,7 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     // The track is all set up, hand it out
-    this->track.swap(track);
-
+    this->track.swap(newTrack);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -473,7 +479,7 @@ namespace Nuclex::OpusTranscoder::Services {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void Transcoder::encodeOriginalTrack(
+  std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Transcoder::encodeOriginalTrack(
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::Support::Events::Delegate;
@@ -484,12 +490,42 @@ namespace Nuclex::OpusTranscoder::Services {
 
     onStepBegun(std::string(u8"Encoding Opus audio stream...", 29));
 
-    Audio::OpusEncoder::Encode(
+    return Audio::OpusEncoder::Encode(
       this->track,
       this->targetBitrate,
       canceler,
       progressCallback
     );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::writeVirtualFileToDisk(
+    const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
+    const std::string &fileOutputPath
+  ) {
+    std::vector<std::byte> buffer(65536);
+
+    std::shared_ptr<Nuclex::Audio::Storage::VirtualFile> outFile = (
+      Nuclex::Audio::Storage::VirtualFile::OpenRealFileForWriting(fileOutputPath)
+    );
+
+    std::uint64_t length = file->GetSize();
+    std::uint64_t offset = 0;
+    while(0 < length) {
+      std::size_t chunkSize;
+      if(length < 65536) {
+        chunkSize = static_cast<std::size_t>(length);
+      } else {
+        chunkSize = 65536;
+      }
+
+      file->ReadAt(offset, chunkSize, buffer.data());
+      outFile->WriteAt(offset, chunkSize, buffer.data());
+
+      offset += chunkSize;
+      length -= chunkSize;
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //
