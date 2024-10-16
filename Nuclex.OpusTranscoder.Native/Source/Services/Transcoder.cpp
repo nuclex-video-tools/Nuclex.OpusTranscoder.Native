@@ -265,14 +265,25 @@ namespace Nuclex::OpusTranscoder::Services {
       // Downmix and/or reorder the audio channels to the Vorbis channel order
       transformToOutputLayout(canceler);
 
+      // If normal de-clipping is chosen, simply scan the input audio track for
+      // half-waves that are clipping and fix them.
       if(this->declip && !this->iterativeDeclip) {
         findClippingHalfwaves(canceler);
         declipOriginalTrack(canceler);
       }
 
-      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile = (
-        encodeOriginalTrack(canceler)
-      );
+      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile;
+      for(;;) {
+        encodedOpusFile = (
+          encodeOriginalTrack(canceler)
+        );
+
+        if(this->declip && this->iterativeDeclip) {
+          
+        }
+
+        break;
+      }
 
       writeVirtualFileToDisk(encodedOpusFile, this->outputPath);
     }

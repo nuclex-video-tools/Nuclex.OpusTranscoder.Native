@@ -270,7 +270,8 @@ namespace Nuclex::OpusTranscoder {
       }
     }
 
-    this->ui->outputPathLine->setText(newOutputFileInfo.filePath());
+    QString path = QDir::toNativeSeparators(newOutputFileInfo.filePath());
+    this->ui->outputPathLine->setText(path);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -426,6 +427,9 @@ namespace Nuclex::OpusTranscoder {
     this->ui->ignoreClippingOption->setEnabled(enable);
     this->ui->tuckHalfWavesOption->setEnabled(enable);
     this->ui->iterativeAntiClipOption->setEnabled(enable);
+    this->ui->normalizationLabel->setEnabled(enable);
+    this->ui->keepAmplitudeOption->setEnabled(enable);
+    this->ui->normalizeOption->setEnabled(enable);
     this->ui->encodeOrCancelButton->setEnabled(enable);
   }
   // ------------------------------------------------------------------------------------------- //
@@ -450,6 +454,9 @@ namespace Nuclex::OpusTranscoder {
     this->ui->ignoreClippingOption->setEnabled(enable);
     this->ui->tuckHalfWavesOption->setEnabled(enable);
     this->ui->iterativeAntiClipOption->setEnabled(enable);
+    this->ui->normalizationLabel->setEnabled(enable);
+    this->ui->keepAmplitudeOption->setEnabled(enable);
+    this->ui->normalizeOption->setEnabled(enable);
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -506,7 +513,8 @@ namespace Nuclex::OpusTranscoder {
     if(result == QDialog::Accepted) {
       QStringList selectedFiles = selectInputFileDialog->selectedFiles();
       if(!selectedFiles.empty()) {
-        this->ui->inputPathLine->setText(selectedFiles[0]);
+        QString path = QDir::toNativeSeparators(selectedFiles[0]);
+        this->ui->inputPathLine->setText(path);
         inputFileEntered();
       }
     }
@@ -555,7 +563,8 @@ namespace Nuclex::OpusTranscoder {
     if(result == QDialog::Accepted) {
       QStringList selectedFiles = selectOutputFileDialog->selectedFiles();
       if(!selectedFiles.empty()) {
-        this->ui->outputPathLine->setText(selectedFiles[0]);
+        QString path = QDir::toNativeSeparators(selectedFiles[0]);
+        this->ui->outputPathLine->setText(path);
       }
     }
   }
@@ -599,10 +608,11 @@ namespace Nuclex::OpusTranscoder {
       this->ui->bitrateSlider->setMaximum(992);
     }
 
-    // Calculate the bitrate in kbit/s that is on the same interval.
-    // Assuming the minimum and maximum we picked amount to the same quality,
-    // this will preserves the quality chosen by the user when switching from
-    // stereo to surround and back.
+    // Calculate the relative position of the bitrate slider, than transform
+    // it into the new bitrate range. If we estimated the bitrate needs between
+    // stereo and 5.1 correctly, it will keep the quality identical. At the very
+    // least, the previous value should come back when the user toggles forth
+    // and back between stereo and 5.1 surround.
     {
       int newBitrate;
       {
@@ -658,6 +668,8 @@ namespace Nuclex::OpusTranscoder {
       this->opusTranscoder->EnableIterativeDeclipping();
     }
 
+    // Forward the "nightmode" stereo downmix level. If the output is not stereo,
+    // this value will be ignored, so we don't have to selectively set/skip it.
     this->opusTranscoder->SetNightmodeLevel(
       static_cast<float>(this->ui->nightModeSlider->value()) / 100.0f
     );
@@ -674,20 +686,28 @@ namespace Nuclex::OpusTranscoder {
       }
     }
     this->opusTranscoder->SetOutputChannels(isStereo ? Stereo : FiveDotOne);
+
+    // Finally, the target bitrate if kilobits per second
     this->opusTranscoder->SetTargetBitrate(
       static_cast<float>(this->ui->bitrateNumber->value())
     );
 
-    this->opusTranscoder->TranscodeAudioFile(
-      this->ui->inputPathLine->text().toStdString(),
-      this->ui->outputPathLine->text().toStdString()
-    );
+    // Toggle the UI and kick off the transcode. Transcoding will actually happen
+    // in a background thread, the 'TranscodeAudioFile()' merely launches it.
+    // We're already subscribed to the transcoding service's events,
+    // through which we'll be notified when the transcode progresses and/or ends.
+    {
+      enableControlsForConfigurationPhase(false);
 
-    enableControlsForConfigurationPhase(false);
+      this->ui->encodeOrCancelButton->setText(u8"Pause");
+      this->ui->encodeOrCancelButton->setEnabled(false);
+      this->ui->quitButton->setText(u8"Abort");
 
-    this->ui->encodeOrCancelButton->setText(u8"Pause");
-    this->ui->encodeOrCancelButton->setEnabled(false);
-    this->ui->quitButton->setText(u8"Abort");
+      this->opusTranscoder->TranscodeAudioFile(
+        this->ui->inputPathLine->text().toStdString(),
+        this->ui->outputPathLine->text().toStdString()
+      );
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //

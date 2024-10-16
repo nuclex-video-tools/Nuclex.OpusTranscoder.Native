@@ -109,6 +109,10 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <param name="birateInKilobits">Target bitrate of the Opus file</param>
     public: void SetTargetBitrate(float birateInKilobits);
 
+    /// <summary>Enables signal level normalization for the encoded audio data</summary>
+    /// <param name="enable">True to enable normalization, false to disable it</param>
+    public: void EnableNormalization(bool enable = true);
+
     /// <summary>Transcodes the specified audio file to an Opus audio file</summary>
     /// <param name="inputPath">Path to the audio file that will be transcoded</param>
     /// <param name="outputPath">Path where the produced Opus file will be saved</param>
@@ -209,6 +213,8 @@ namespace Nuclex::OpusTranscoder::Services {
     private: Nuclex::Audio::ChannelPlacement outputChannels;
     /// <summary>Target bitrate to encode the Opus output file to</summary>
     private: float targetBitrate;
+    /// <summary>Whether the signal should be normalized before encoding</summary>
+    private: bool normalize;
 
     /// <summary>Path of the file being transcoded</summary>
     private: std::string inputPath;

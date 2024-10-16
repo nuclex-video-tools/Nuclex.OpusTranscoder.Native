@@ -39,6 +39,7 @@ limitations under the License.
 int main(int argc, char *argv[]) {
   int exitCode;
   {
+    //::qputenv("QT_QPA_PLATFORM", "windows:darkmode=2");
     QApplication application(argc, argv);
 
     application.setWindowIcon(QIcon(u8":/freepik-sound-waves-and-gear-512x512.png"));

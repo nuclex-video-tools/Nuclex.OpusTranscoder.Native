@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>697</width>
-    <height>499</height>
+    <height>582</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,57 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="6" column="1" colspan="4">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QRadioButton" name="ignoreClippingOption">
-        <property name="toolTip">
-         <string>Clipping in the encoded output file should be ignored and left as-is.</string>
-        </property>
-        <property name="text">
-         <string>Ignore</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="tuckHalfWavesOption">
-        <property name="toolTip">
-         <string>Clipping half-waves in each audio channel will be scaled down so the data fed to the Opus encoder does not clip.</string>
-        </property>
-        <property name="text">
-         <string>Reduce Half-Waves</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="iterativeAntiClipOption">
-        <property name="toolTip">
-         <string>The encoded Opus audio file will be decoded and checked for clipping introduced by Opus itself. It will then be encoded again with appropriate adjustments and this process will be repeated until the generated Opus file has no clipping at all when it is decoded.</string>
-        </property>
-        <property name="text">
-         <string>Iterative Reduction</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="1" colspan="3">
-     <widget class="QLineEdit" name="inputPathLine">
-      <property name="toolTip">
-       <string>Input file path. Can be any Waveform (*.wav), FLAC (*.flac) or WavPack (*.wv) file. Press enter after entering the path to read the input file's channel layout and properties.</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3" colspan="2">
-     <widget class="QComboBox" name="outputChannelsCombo">
-      <property name="toolTip">
-       <string>The channel layout the output Opus (*.opus) file should have. Selecting fewer channels than the input file will downmix channels as shown in the visualization panel.</string>
-      </property>
-     </widget>
-    </item>
     <item row="5" column="0">
      <widget class="QLabel" name="nightModeLabel">
       <property name="toolTip">
@@ -76,69 +25,14 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="1" colspan="4">
-     <widget class="QGraphicsView" name="channelGraphics">
+    <item row="0" column="1" colspan="3">
+     <widget class="QLineEdit" name="inputPathLine">
       <property name="toolTip">
-       <string>Visualizes what is going to happen ot the audio channels of the input file when they're encoded in the output Opus (*.opus) file.</string>
+       <string>Input file path. Can be any Waveform (*.wav), FLAC (*.flac) or WavPack (*.wv) file. Press enter after entering the path to read the input file's channel layout and properties.</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="4">
-     <widget class="QPushButton" name="browseInputFileButton">
-      <property name="toolTip">
-       <string>Opens a file selection dialog that lets you browse for the input file.</string>
-      </property>
-      <property name="text">
-       <string>Browse...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="9" column="0" colspan="5">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>10</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="5" column="1" colspan="4">
-     <widget class="QSlider" name="nightModeSlider">
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Nightmode intensity. At zero intensity (far left) the ATSC 7.8 downmix formula is used (which is the default for most applications). At full intensity (far right), the Nightmode formula is used.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Nightmode is an alternative 5.1 to stereo downmix formula originating from a user on the Doom9 forums. It gives the center channel more prominence and is intended to make spoken dialogue easier to hear in the downmix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="maximum">
-       <number>100</number>
-      </property>
-      <property name="singleStep">
-       <number>5</number>
-      </property>
-      <property name="pageStep">
-       <number>25</number>
-      </property>
-      <property name="value">
-       <number>50</number>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1" colspan="2">
-     <widget class="QComboBox" name="inputChannelsCombo">
-      <property name="toolTip">
-       <string>The channel layout of the input file.</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="1" colspan="4">
+    <item row="8" column="1" colspan="4">
      <layout class="QHBoxLayout" name="bitrateLayout">
       <item>
        <widget class="QSlider" name="bitrateSlider">
@@ -196,6 +90,233 @@
       </item>
      </layout>
     </item>
+    <item row="11" column="0" colspan="5">
+     <spacer name="progressToButtonSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="1" colspan="3">
+     <widget class="QLineEdit" name="outputPathLine">
+      <property name="toolTip">
+       <string>Path in which the generated Opus (*.opus) audio file will be saved.</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="outputFileLabel">
+      <property name="toolTip">
+       <string>Opus audio file that will be the final output generated by the transcoding process.</string>
+      </property>
+      <property name="text">
+       <string>Output File</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QPushButton" name="browseInputFileButton">
+      <property name="toolTip">
+       <string>Opens a file selection dialog that lets you browse for the input file.</string>
+      </property>
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1" colspan="4">
+     <layout class="QHBoxLayout" name="clippingChoiceLayout">
+      <item>
+       <widget class="QRadioButton" name="ignoreClippingOption">
+        <property name="toolTip">
+         <string>Clipping in the encoded output file should be ignored and left as-is.</string>
+        </property>
+        <property name="text">
+         <string>Ignore</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">declipGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="tuckHalfWavesOption">
+        <property name="toolTip">
+         <string>Clipping half-waves in each audio channel will be scaled down so the data fed to the Opus encoder does not clip.</string>
+        </property>
+        <property name="text">
+         <string>Reduce Half-Waves</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">declipGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="iterativeAntiClipOption">
+        <property name="toolTip">
+         <string>The encoded Opus audio file will be decoded and checked for clipping introduced by Opus itself. It will then be encoded again with appropriate adjustments and this process will be repeated until the generated Opus file has no clipping at all when it is decoded.</string>
+        </property>
+        <property name="text">
+         <string>Iterative Reduction</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">declipGroup</string>
+        </attribute>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="12" column="0" colspan="5">
+     <layout class="QHBoxLayout" name="actionButtonLayout">
+      <item>
+       <spacer name="paddingToButtonSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="encodeOrCancelButton">
+        <property name="toolTip">
+         <string>Begins the transcode process.</string>
+        </property>
+        <property name="text">
+         <string>Transcode</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="quitButton">
+        <property name="toolTip">
+         <string>Terminates the application.</string>
+        </property>
+        <property name="text">
+         <string>Quit</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="normalizationLabel">
+      <property name="toolTip">
+       <string>Whether the audio track should be normalized in amplitude (volume).</string>
+      </property>
+      <property name="text">
+       <string>Normalization</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1" colspan="4">
+     <layout class="QHBoxLayout" name="normalizationLayout">
+      <item>
+       <widget class="QRadioButton" name="keepAmplitudeOption">
+        <property name="toolTip">
+         <string>Leaves the amplitude of the audio signal untouched. Note that downmixing unconventional 5.1 surround tracks to stereo may introduce clipping with this option.</string>
+        </property>
+        <property name="text">
+         <string>Keep Amplitude</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">normalizationGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="normalizeOption">
+        <property name="toolTip">
+         <string>Normalizes the amplitude to use the full range. This both prevents clipping introduced from unconvential 5.1 surround tracks that are downmixed and fixes stereo tracks mixed to a lower volume level. Will also ruin pure music tracks that intentionally remain at a lower volume.</string>
+        </property>
+        <property name="text">
+         <string>Normalize Amplitude Level</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">normalizationGroup</string>
+        </attribute>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="4">
+     <widget class="QPushButton" name="browseOutputFileButton">
+      <property name="toolTip">
+       <string>Opens a file selection dialog in which you can pick the directory and choose a new or existing output file name for your Opus (*.opus) file.</string>
+      </property>
+      <property name="text">
+       <string>Browse...</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="bitrateLabel">
+      <property name="toolTip">
+       <string>Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.</string>
+      </property>
+      <property name="text">
+       <string>Target Bitrate</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1" colspan="4">
+     <widget class="QSlider" name="nightModeSlider">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Nightmode intensity. At zero intensity (far left) the ATSC 7.8 downmix formula is used (which is the default for most applications). At full intensity (far right), the Nightmode formula is used.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Nightmode is an alternative 5.1 to stereo downmix formula originating from a user on the Doom9 forums. It gives the center channel more prominence and is intended to make spoken dialogue easier to hear in the downmix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="maximum">
+       <number>100</number>
+      </property>
+      <property name="singleStep">
+       <number>5</number>
+      </property>
+      <property name="pageStep">
+       <number>25</number>
+      </property>
+      <property name="value">
+       <number>50</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="5">
+     <spacer name="filesToOptionsSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
     <item row="6" column="0">
      <widget class="QLabel" name="antiClipLabel">
       <property name="toolTip">
@@ -206,13 +327,13 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="4">
-     <widget class="QPushButton" name="browseOutputFileButton">
+    <item row="0" column="0">
+     <widget class="QLabel" name="inputFileLabel">
       <property name="toolTip">
-       <string>Opens a file selection dialog in which you can pick the directory and choose a new or existing output file name for your Opus (*.opus) file.</string>
+       <string>File that will be decoded and then encoded to the Opus audio format.</string>
       </property>
       <property name="text">
-       <string>Browse...</string>
+       <string>Input File</string>
       </property>
      </widget>
     </item>
@@ -229,7 +350,14 @@
       </property>
      </widget>
     </item>
-    <item row="8" column="0" colspan="5">
+    <item row="3" column="1" colspan="2">
+     <widget class="QComboBox" name="inputChannelsCombo">
+      <property name="toolTip">
+       <string>The channel layout of the input file.</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="0" colspan="5">
      <widget class="QFrame" name="warningFrame">
       <property name="minimumSize">
        <size>
@@ -279,25 +407,22 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="1" colspan="3">
-     <widget class="QLineEdit" name="outputPathLine">
+    <item row="3" column="3" colspan="2">
+     <widget class="QComboBox" name="outputChannelsCombo">
       <property name="toolTip">
-       <string>Path in which the generated Opus (*.opus) audio file will be saved.</string>
+       <string>The channel layout the output Opus (*.opus) file should have. Selecting fewer channels than the input file will downmix channels as shown in the visualization panel.</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="outputFileLabel">
+    <item row="4" column="1" colspan="4">
+     <widget class="QGraphicsView" name="channelGraphics">
       <property name="toolTip">
-       <string>Opus audio file that will be the final output generated by the transcoding process.</string>
-      </property>
-      <property name="text">
-       <string>Output File</string>
+       <string>Visualizes what is going to happen ot the audio channels of the input file when they're encoded in the output Opus (*.opus) file.</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="5">
-     <spacer name="verticalSpacer_2">
+    <item row="9" column="0" colspan="5">
+     <spacer name="settingsToWarningFrameSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -312,66 +437,13 @@
       </property>
      </spacer>
     </item>
-    <item row="10" column="0" colspan="5">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="encodeOrCancelButton">
-        <property name="toolTip">
-         <string>Begins the transcode process.</string>
-        </property>
-        <property name="text">
-         <string>Transcode</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="quitButton">
-        <property name="toolTip">
-         <string>Terminates the application.</string>
-        </property>
-        <property name="text">
-         <string>Quit</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="inputFileLabel">
-      <property name="toolTip">
-       <string>File that will be decoded and then encoded to the Opus audio format.</string>
-      </property>
-      <property name="text">
-       <string>Input File</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="0">
-     <widget class="QLabel" name="bitrateLabel">
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Targeted bitrate of the encoded Opus audio file. Opinions may vary, but generally 96 kbit/s is considered virtually imperceptible from the original file and 128 kbit/s is considered transparent. 192 kbit/s should be on the safe side of everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="text">
-       <string>Target Bitrate</string>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="normalizationGroup"/>
+  <buttongroup name="declipGroup"/>
+ </buttongroups>
 </ui>
