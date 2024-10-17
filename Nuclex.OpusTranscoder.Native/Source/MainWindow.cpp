@@ -691,6 +691,9 @@ namespace Nuclex::OpusTranscoder {
     this->opusTranscoder->SetTargetBitrate(
       static_cast<float>(this->ui->bitrateNumber->value())
     );
+    this->opusTranscoder->EnableNormalization(
+      this->ui->normalizeOption->isChecked()
+    );
 
     // Toggle the UI and kick off the transcode. Transcoding will actually happen
     // in a background thread, the 'TranscodeAudioFile()' merely launches it.

@@ -109,7 +109,9 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> OpusEncoder::Encode(
     const std::shared_ptr<Track> &track,
+    const std::vector<float> &asamples,
     float bitRateInKilobits,
+    float effort,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
     Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
@@ -121,15 +123,15 @@ namespace Nuclex::OpusTranscoder::Audio {
     if(track->Channels.size() == 2) {
       encoder = saver.ProvideBuilder(u8"Opus")->
         SetStereoChannels().
-        SetCompressionEffort(1.0f).
-        SetSampleRate(48000).
+        SetCompressionEffort(effort).
+        SetSampleRate(track->SampleRate).
         SetTargetBitrate(bitRateInKilobits).
         Build(encodedFile);
     } else {
       encoder = saver.ProvideBuilder(u8"Opus")->
         SetFiveDotOneChannelsInVorbisOrder().
-        SetCompressionEffort(1.0f).
-        SetSampleRate(48000).
+        SetCompressionEffort(effort).
+        SetSampleRate(track->SampleRate).
         SetTargetBitrate(bitRateInKilobits).
         Build(encodedFile);
     }
@@ -138,7 +140,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     // use them as-is and simply divide by the channel count to obtain the frame count.
     std::uint64_t totalFrameCount = track->Samples.size() / track->Channels.size();
     std::uint64_t remainingFrameCount = totalFrameCount;
-    const float *samples = track->Samples.data();
+    const float *samples = asamples.data();
 
     //FILE *x = fopen(u8"/srv/video/test.dat", "wb");
     //fwrite(samples, sizeof(float), track->Samples.size(), x);

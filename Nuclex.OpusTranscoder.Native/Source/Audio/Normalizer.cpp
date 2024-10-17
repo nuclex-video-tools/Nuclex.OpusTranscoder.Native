@@ -20,7 +20,7 @@ limitations under the License.
 // If the application is compiled as a DLL, this ensures symbols are exported
 #define NUCLEX_OPUSTRANSCODER_SOURCE 1
 
-#include "./HalfwaveTucker.h"
+#include "./Normalizer.h"
 
 namespace {
 
@@ -39,189 +39,98 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void HalfwaveTucker::TuckClippingHalfwaves(
+  void Normalizer::Normalize(
     const std::shared_ptr<Track> &track,
+    bool allowVolumeDecrease,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
     Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
+    using Nuclex::Audio::ChannelPlacement;
+
     std::size_t channelCount = track->Channels.size();
     std::size_t frameCount = track->Samples.size() / channelCount;
 
+    float maximumAmplitude = 0.0f;
+    float maximumBassAmplitude = 0.0f;
+
+    // Stage 1: scan all channels to find their peak amplitudes. Keep bass and
+    // normal peak separate, we'll normalize the bass independently.
+    for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+      Channel &channel = track->Channels[channelIndex];
+      const float *samples = track->Samples.data() + channelIndex;
+
+      if(channel.Placement == ChannelPlacement::LowFrequencyEffects) {
+        for(std::size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+          float amplitude = samples[0];
+          if(maximumBassAmplitude < amplitude) {
+            maximumBassAmplitude = amplitude;
+          }
+          samples += channelCount;
+
+          if((frameIndex & 0x2fff) == 0) {
+            canceler->ThrowIfCanceled();
+            progressCallback(
+              static_cast<float>(frameIndex) / static_cast<float>(frameCount) / 2.0f
+            );
+          } // if progress interval reached
+        } // for each frame
+      } else { // If channel ^^ is bass ^^ / vv is not bass vv
+        for(std::size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+          float amplitude = samples[0];
+          if(maximumAmplitude < amplitude) {
+            maximumAmplitude = amplitude;
+          }
+          samples += channelCount;
+
+          if((frameIndex & 0x2fff) == 0) {
+            canceler->ThrowIfCanceled();
+            progressCallback(
+              static_cast<float>(frameIndex) / static_cast<float>(frameCount) / 2.0f
+            );
+          } // if progress interval reached
+        } // for each frame
+      } // if channel is bass or not bass
+    } // for each channel
+
+    // Stay 0.001 dB below the signal ceiling
+    maximumAmplitude *= MinusOneThousandthDecibel;
+    maximumBassAmplitude *= MinusOneThousandthDecibel;
+
+    // Stage 2: increase the volume of all tracks by the same amount to make them
+    // use the full available volume range
     for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
       Channel &channel = track->Channels[channelIndex];
       float *samples = track->Samples.data() + channelIndex;
 
-      std::uint64_t skipStartIndex = 0;
-
-      std::size_t halfwaveCount = channel.ClippingHalfwaves.size();
-      for(std::size_t halfwaveIndex = 0; halfwaveIndex < halfwaveCount; ++halfwaveIndex) {
-        ClippingHalfwave &halfwave = channel.ClippingHalfwaves[halfwaveIndex];
-
-        samples += (halfwave.PriorZeroCrossingIndex - skipStartIndex) * channelCount;
-
-        // We completely rely on the measured peak here and don't update the scaling factor.
-        // The reason is that, for the iterative de-clipper, the peaks will have been collected
-        // from the decoded Opus stream, but we need to apply them to (a copy of) the original
-        // channels, to avoid generation loss when we encode the Opus file once more.
-        {
-          // This is by how much we'd have to scale the amplitude down to tuck the half-wave
-          // in far enough to stay below the signal ceiling
-          float quotient = std::abs(halfwave.CurrentPeakAmplitude);
-
-          // If there is a valid prior peak amplitude, it means we already did the above
-          // calculation, yet it didn't bring the peak down far enough. So this time around,
-          // we'll calculate how much we will have to overshoot to hit the goal.
-          if(halfwave.PriorVolumeQuotient != 0.0f) {
-            quotient *= halfwave.PriorVolumeQuotient;
-          }
-
-          // Record the current volume so that, after decoding the Opus file, if there is
-          // still clipping, we can record the quotient we tried but which wasn't enough,
-          // which will then be picked up by the compensation just above this statement.
-          halfwave.CurrentVolumeQuotient = quotient;
-
-          // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
-          for(
-            std::uint64_t index = halfwave.PriorZeroCrossingIndex;
-            index < halfwave.NextZeroCrossingIndex;
-            ++index
-          ) {
-            samples[0] /= quotient;
+      if(channel.Placement == ChannelPlacement::LowFrequencyEffects) {
+        if(allowVolumeDecrease || (maximumBassAmplitude < 1.0f)) {
+          for(std::size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+            samples[0] /= maximumBassAmplitude;
             samples += channelCount;
 
-            if((index & 0x2fff) == 0) {
+            if((frameIndex & 0x2fff) == 0) {
               canceler->ThrowIfCanceled();
               progressCallback(
-                (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-                (
-                  static_cast<float>(index) /
-                  static_cast<float>(frameCount) /
-                  static_cast<float>(channelCount)
-                )
+                static_cast<float>(frameIndex) / static_cast<float>(frameCount) / 2.0f + 0.5f
               );
-            } // if progress report interval hit
-          } // for each sample in the clipping half-wave
+            } // if progress interval reached
+          } // for each frame
+        } // if volume decrease allowed or channel is below maximum amplitude
+      } else { // If channel ^^ is bass ^^ / vv is not bass vv
+        if(allowVolumeDecrease || (maximumAmplitude < 1.0f)) {
+          for(std::size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+            samples[0] /= maximumAmplitude;
+            samples += channelCount;
 
-          skipStartIndex = halfwave.NextZeroCrossingIndex;
-        }
-
-      } // for each clipping halfwave identified
-    } // for each channel
-  }
-
-  // ------------------------------------------------------------------------------------------- //
-
-  void HalfwaveTucker::TuckClippingHalfwaves(
-    const std::shared_ptr<Track> &track,
-    std::vector<float> &tuckedSamples,
-    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
-    Nuclex::Support::Events::Delegate<void(float)> &progressCallback
-  ) {
-    std::size_t channelCount = track->Channels.size();
-    std::size_t frameCount = track->Samples.size() / channelCount;
-
-    for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
-      Channel &channel = track->Channels[channelIndex];
-      const float *read = track->Samples.data() + channelIndex;
-      float *write = tuckedSamples.data() + channelIndex;
-
-      std::uint64_t copyStartIndex = 0;
-
-      std::size_t halfwaveCount = channel.ClippingHalfwaves.size();
-      for(std::size_t halfwaveIndex = 0; halfwaveIndex < halfwaveCount; ++halfwaveIndex) {
-        ClippingHalfwave &halfwave = channel.ClippingHalfwaves[halfwaveIndex];
-
-        // Copy the data up to where the clipping half-wave begins
-        for(
-          std::size_t index = copyStartIndex;
-          index < halfwave.PriorZeroCrossingIndex;
-          ++index
-        ) {
-          *write = *read;
-          read += channelCount;
-          write += channelCount;
-
-          if((index & 0x2fff) == 0) {
-            canceler->ThrowIfCanceled();
-            progressCallback(
-              (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-              (
-                static_cast<float>(index) /
-                static_cast<float>(frameCount) /
-                static_cast<float>(channelCount)
-              )
-            );
-          } // if progress report interval hit
-        } // for each sample up to the clipping half-wave
-
-        // We completely rely on the measured peak here and don't update the scaling factor.
-        // The reason is that, for the iterative de-clipper, the peaks will have been collected
-        // from the decoded Opus stream, but we need to apply them to (a copy of) the original
-        // channels, to avoid generation loss when we encode the Opus file once more.
-        {
-          // This is by how much we'd have to scale the amplitude down to tuck the half-wave
-          // in far enough to stay below the signal ceiling
-          float quotient = std::abs(halfwave.CurrentPeakAmplitude);
-
-          // If there is a valid prior peak amplitude, it means we already did the above
-          // calculation, yet it didn't bring the peak down far enough. So this time around,
-          // we'll calculate how much we will have to overshoot to hit the goal.
-          if(halfwave.PriorVolumeQuotient != 0.0f) {
-            quotient *= halfwave.PriorVolumeQuotient;
-          }
-
-          // Record the current volume so that, after decoding the Opus file, if there is
-          // still clipping, we can record the quotient we tried but which wasn't enough,
-          // which will then be picked up by the compensation just above this statement.
-          halfwave.CurrentVolumeQuotient = quotient;
-
-          // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
-          for(
-            std::uint64_t index = halfwave.PriorZeroCrossingIndex;
-            index < halfwave.NextZeroCrossingIndex;
-            ++index
-          ) {
-            *write = *read / quotient;
-
-            read += channelCount;
-            write += channelCount;
-
-            if((index & 0x2fff) == 0) {
+            if((frameIndex & 0x2fff) == 0) {
               canceler->ThrowIfCanceled();
               progressCallback(
-                (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-                (
-                  static_cast<float>(index) /
-                  static_cast<float>(frameCount) /
-                  static_cast<float>(channelCount)
-                )
+                static_cast<float>(frameIndex) / static_cast<float>(frameCount) / 2.0f + 0.5f
               );
-            } // if progress report interval hit
-          } // for each sample in the clipping half-wave
-
-          copyStartIndex = halfwave.NextZeroCrossingIndex;
-        }
-
-      } // for each clipping halfwave identified
-
-      // Copy the data from where last clipping half-wave ended to the end of the channel
-      for(std::size_t index = copyStartIndex; index < frameCount; ++index) {
-        *write = *read;
-        read += channelCount;
-        write += channelCount;
-
-        if((index & 0x2fff) == 0) {
-          canceler->ThrowIfCanceled();
-          progressCallback(
-            (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-            (
-              static_cast<float>(index) /
-              static_cast<float>(frameCount) /
-              static_cast<float>(channelCount)
-            )
-          );
-        } // if progress report interval hit
-      } // for each sample between the last clipping half-wave and the channel's end
+            } // if progress interval reached
+          } // for each frame
+        } // if volume decrease allowed or channel is below maximum amplitude
+      } // if channel is bass or not bass
     } // for each channel
   }
 

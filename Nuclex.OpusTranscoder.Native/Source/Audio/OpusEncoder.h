@@ -39,12 +39,15 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <summary>Encodes the specified audio track into an Opus file</summary>
     /// <param name-"track">Track in which half-waves will be tucked</param>
     /// <param name-"bitrate">Target bitrate for the encoded audio stream</param>
+    /// <param name-"effort">Effort (cpu time) to invest for optimal compression</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     /// <returns>A virtual file containing the encoded Opus file contents</returns>
     public: static std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Encode(
       const std::shared_ptr<Track> &track,
+      const std::vector<float> &samples,
       float bitrate,
+      float effort,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );

@@ -113,6 +113,10 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <param name="enable">True to enable normalization, false to disable it</param>
     public: void EnableNormalization(bool enable = true);
 
+    /// <summary>Chooses the amount of effort to invest into optimal compression</summary>
+    /// <param name="effort">The amount of effort to invest on a scale from 0.0 to 1.0</param>
+    public: void SetEffort(float effort);
+
     /// <summary>Transcodes the specified audio file to an Opus audio file</summary>
     /// <param name="inputPath">Path to the audio file that will be transcoded</param>
     /// <param name="outputPath">Path where the produced Opus file will be saved</param>
@@ -148,36 +152,77 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <summary>Decodes all audio samples from the input file into memory</summary>
     /// <param name="file">File from which the Opus audio data will be decoded</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void decodeInputFile(
+    /// <returns>The decoded input file and all needed metadata</returns>
+    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodeInputFile(
       const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
     /// <summary>Transforms the input channels ot the selected output layout</summary>
+    /// <param name="track">Track that will be transformed to the output channel layout</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <remarks>
     ///   This will upmix, downmix or reorder the audio samples to either of the two
     ///   support channel layouts - stereo or 5.1 surround.
     /// </remarks>
     private: void transformToOutputLayout(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Normalizes the volume of the track</summary>
+    /// <param name="track">Track that will be normalized</param>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void normalizeTrack(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
     /// <summary>Looks for instances of clipping in the input file</summary>
+    /// <param name="track">Track in which clipping half-waves will be looked for</param>
+    /// <param name="samples">Samples in which the clipping half-waves will be checked</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     private: void findClippingHalfwaves(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Re-examines the clipping hakf-waves in the new audio sample array</summary>
+    /// <param name="track">Track in which clipping half-waves will be looked for</param>
+    /// <param name="samples">Samples in which the clipping half-waves will be checked</param>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    /// <returns>The number of clipping half-waves still present</returns>
+    private: std::size_t updateClippingHalfwaves(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      const std::vector<float> &samples,
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Removes clipping from the original audio track</summary>
+    /// <param name="track">Track that will be de-clipped</param>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void declipTrack(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+    );
+
+    /// <summary>Copies an audio track while removing clipping from it</summary>
+    /// <param name="track">Track that will be de-clipped</param>
+    /// <param name="samples">Sample array the copy will be written into</param>
+    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
+    private: void copyAndDeclipTrack(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      std::vector<float> &samples,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
     /// <summary>Remvoes clipping from the original audio track</summary>
+    /// <param name="track">Track that will be encoded to Op[us</param>]
+    /// <param name="sample">Array containing the interleaved samples to encode</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void declipOriginalTrack(
-      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
-    );
-
-    /// <summary>Remvoes clipping from the original audio track</summary>
-    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodeOriginalTrack(
+    private: std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodeTrack(
+      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+      const std::vector<float> &samples,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
@@ -215,14 +260,13 @@ namespace Nuclex::OpusTranscoder::Services {
     private: float targetBitrate;
     /// <summary>Whether the signal should be normalized before encoding</summary>
     private: bool normalize;
+    /// <summary>Amount of compression effort on a scale from 0.0 to 1.0</summary>
+    private: float effort;
 
     /// <summary>Path of the file being transcoded</summary>
     private: std::string inputPath;
     /// <summary>Order in which the input channels appear</summary>
     private: std::vector<Nuclex::Audio::ChannelPlacement> inputChannelOrder;
-
-    /// <summary>Stores the full decoded audio track and clipping information</summary>
-    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track;
 
     /// <summary>Path under which the encoded Opus file will be saved</summary>
     private: std::string outputPath;

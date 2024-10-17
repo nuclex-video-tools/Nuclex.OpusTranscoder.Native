@@ -52,12 +52,17 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="track">Audio track that will be normalized</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
+    /// <remarks>
+    ///   This only normalizes upwards - the volume is only ever increased, never lowered.
+    ///   If the track is too loud, it needs to be processed otherwise - either de-clipped if
+    ///   only small 
+    /// </remarks>
     public: static void Normalize(
       const std::shared_ptr<Track> &track,
+      bool allowVolumeDecrease,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
-
 
   };
 

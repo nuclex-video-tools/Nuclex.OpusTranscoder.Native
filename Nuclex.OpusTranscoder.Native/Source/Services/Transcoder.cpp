@@ -33,6 +33,7 @@ limitations under the License.
 #include "../Audio/ChannelLayoutTransformer.h"
 #include "../Audio/ClippingDetector.h"
 #include "../Audio/HalfwaveTucker.h"
+#include "../Audio/Normalizer.h"
 #include "../Audio/OpusEncoder.h"
 
 #include <QDir>
@@ -155,9 +156,10 @@ namespace Nuclex::OpusTranscoder::Services {
     nightmodeLevel(0.5f),
     outputChannels(Nuclex::Audio::ChannelPlacement::Unknown),
     targetBitrate(192),
+    normalize(false),
+    effort(1.0f),
     inputPath(),
     inputChannelOrder(),
-    track(),
     outputPath(),
     outputChannelOrder(),
     currentStepDescription(u8"Idle"),
@@ -199,6 +201,18 @@ namespace Nuclex::OpusTranscoder::Services {
 
   void Transcoder::SetTargetBitrate(float birateInKilobits) {
     this->targetBitrate = birateInKilobits;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::EnableNormalization(bool enable /* = true */) {
+    this->normalize = enable;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::SetEffort(float newEffort) {
+    this->effort = newEffort;
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -260,31 +274,84 @@ namespace Nuclex::OpusTranscoder::Services {
       }
 
       // Read the entire input file with all audio samples into memory
-      decodeInputFile(file, canceler);
+      std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track = (
+        decodeInputFile(file, canceler)
+      );
+
+      // If normalization is enabled (to bring up the volume for too quiet tracks),
+      // do it before downmixing. This way around there should be less precision loss.
+      if(this->normalize) {
+        normalizeTrack(track, canceler);
+      }
 
       // Downmix and/or reorder the audio channels to the Vorbis channel order
-      transformToOutputLayout(canceler);
+      transformToOutputLayout(track, canceler);
 
-      // If normal de-clipping is chosen, simply scan the input audio track for
-      // half-waves that are clipping and fix them.
-      if(this->declip && !this->iterativeDeclip) {
-        findClippingHalfwaves(canceler);
-        declipOriginalTrack(canceler);
-      }
+      // DISABLED: There are lots of quirky surround mixes. Sometimes the combined
+      // volume goes over 1.0 (a conforming surround mix should keep the overall volume
+      // at the same level as stereo, not use the additional speaker for yield),
+      // sometimes it is too quiet. Our 'Nightmode' option also makes this unpredictable.
+      // 
+      // If the layout transform is a downmix, normalize again because the channels
+      // might not add up to the full stereo range.
+      //bool isDownMix = (this->outputChannelOrder.size() < this->inputChannelOrder.size());
+      //if(this->normalize && isDownMix) {
+      //  normalizeTrack()
+      //}
 
-      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile;
-      for(;;) {
-        encodedOpusFile = (
-          encodeOriginalTrack(canceler)
-        );
+      // TODO: Check overall signal level and warn user if downmix is too loud.
 
-        if(this->declip && this->iterativeDeclip) {
-          
+      // If de-clipping is active, scan the original audio samples for clipping
+      if(this->declip) {
+        findClippingHalfwaves(track, canceler);
+
+        // For single-pass declipping, all we do is de-clip the original audio track.
+        // In case iterative declipping is chosen, we encode and verify first.
+        if(!this->iterativeDeclip) {
+          declipTrack(track, canceler);
         }
-
-        break;
       }
 
+      // Now encode the file. Unless iterative declipping is used, this will be
+      // saved to disk right after. Otherwise, we begin the long-winded declipping loop
+      std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile = (
+        encodeTrack(track, track->Samples, canceler)
+      );
+      if(this->declip && this->iterativeDeclip) {
+        for(;;) {
+
+          // Decode the Opus file again to see where the codec introduced clipping.
+          // This will now add a second, full and uncompressed copy of the raw audio
+          // data into memory, possibly amounting to 10+ GiB of data overall.
+          std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodedOpusFile = (
+            decodeInputFile(encodedOpusFile, canceler)
+          );
+
+          findClippingHalfwaves(decodedOpusFile, canceler);
+          Audio::ClippingDetector::IntegrateClippingInstances(track, decodedOpusFile);
+
+          std::size_t remaining = updateClippingHalfwaves(
+            track, decodedOpusFile->Samples, canceler
+          );
+          if(remaining == 0) {
+            break;
+          }
+
+          // We'll sneakily reuse the decoded Opus file's sample array. This saves
+          // us one full reallocation to hold the original samples with de-clipped
+          // half-waves (we don't touch the original audio track because we don't
+          // want to modify it multiple times in succession - generation loss and all).
+          copyAndDeclipTrack(track, decodedOpusFile->Samples, canceler);
+          encodedOpusFile = encodeTrack(track, decodedOpusFile->Samples, canceler);
+
+          // Free the memory of the raw samples used for encoding
+          std::vector<float>().swap(decodedOpusFile->Samples); // free all memory
+
+        } // for each iteration attempting to de-clip the output
+      } // if iterative clipping enabled
+
+      // If this point is reached, either declipping was off, or only a single pass was
+      // requested, or the iterative declipper has done its work.
       writeVirtualFileToDisk(encodedOpusFile, this->outputPath);
     }
     catch(const std::exception &error) {
@@ -295,7 +362,6 @@ namespace Nuclex::OpusTranscoder::Services {
       this->outcome = false;
 
       this->Ended.Emit();
-      this->track.reset(); // to free the memory again (potentially Gigabytes)
 
       throw; //std::rethrow_exception(std::current_exception());
     }
@@ -305,12 +371,11 @@ namespace Nuclex::OpusTranscoder::Services {
     this->outcome = true;
 
     this->Ended.Emit();
-    this->track.reset(); // to free the memory again (potentially Gigabytes)
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  void Transcoder::decodeInputFile(
+  std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> Transcoder::decodeInputFile(
     const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
@@ -405,12 +470,36 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     // The track is all set up, hand it out
-    this->track.swap(newTrack);
+    return newTrack;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::normalizeTrack(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    // If true, the normalizer will also go to work if the overall volume is above 1.0.
+    // This would sabotage the de-clipper, so we don't want it. Normalization here is
+    // only to bring too audio tracks that are too quiet back in line.
+    constexpr bool allowVolumeDecrease = false;
+
+    onStepBegun(std::string(u8"Normalizing track volume...", 27));
+    Audio::Normalizer::Normalize(
+      track, allowVolumeDecrease, canceler, progressCallback
+    );
   }
 
   // ------------------------------------------------------------------------------------------- //
 
   void Transcoder::transformToOutputLayout(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::OpusTranscoder::Audio::ChannelLayoutTransformer;
@@ -428,21 +517,21 @@ namespace Nuclex::OpusTranscoder::Services {
 
     // Now transform the input audio samples, downmixing, upmixing or re-weaving
     // the interleaved channels into the correct order.
-    if(this->track->Channels.size() < outputChannelCount) {
+    if(track->Channels.size() < outputChannelCount) {
       onStepBegun(std::string(u8"Upmixing to stereo...", 21));
       ChannelLayoutTransformer::UpmixToStereo(
-        this->track, canceler, progressCallback
+        track, canceler, progressCallback
       );
-    } else if(outputChannelCount < this->track->Channels.size()) {
+    } else if(outputChannelCount < track->Channels.size()) {
       if(this->outputChannels == Stereo) {
         onStepBegun(std::string(u8"Downmixing to stereo...", 23));
         ChannelLayoutTransformer::DownmixToStereo(
-          this->track, this->nightmodeLevel, canceler, progressCallback
+          track, this->nightmodeLevel, canceler, progressCallback
         );
       } else if(this->outputChannels == FiveDotOne) {
         onStepBegun(std::string(u8"Upmixing 7.1 to 5.1...", 22));
         ChannelLayoutTransformer::DownmixToFiveDotOne(
-          this->track, canceler, progressCallback
+          track, canceler, progressCallback
         );
       } else {
         throw std::runtime_error(u8"Non-standard output channel layouts are not supported");
@@ -450,7 +539,7 @@ namespace Nuclex::OpusTranscoder::Services {
     } else if(this->inputChannelOrder != this->outputChannelOrder) {
       onStepBegun(std::string(u8"Reordering audio channels...", 28));
       ChannelLayoutTransformer::ReweaveToVorbisLayout(
-        this->track, canceler, progressCallback
+        track, canceler, progressCallback
       );
     }
   }
@@ -458,6 +547,7 @@ namespace Nuclex::OpusTranscoder::Services {
   // ------------------------------------------------------------------------------------------- //
 
   void Transcoder::findClippingHalfwaves(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::Support::Events::Delegate;
@@ -468,13 +558,33 @@ namespace Nuclex::OpusTranscoder::Services {
 
     onStepBegun(std::string(u8"Checking audio track for clipping...", 36));
     Audio::ClippingDetector::FindClippingHalfwaves(
-      this->track, canceler, progressCallback
+      track, canceler, progressCallback
     );
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  void Transcoder::declipOriginalTrack(
+  std::size_t Transcoder::updateClippingHalfwaves(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+    const std::vector<float> &samples,
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    onStepBegun(std::string(u8"Checking audio track for clipping...", 36));
+    return Audio::ClippingDetector::UpdateClippingHalfwaves(
+      track, samples, canceler, progressCallback
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::declipTrack(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::Support::Events::Delegate;
@@ -485,13 +595,34 @@ namespace Nuclex::OpusTranscoder::Services {
 
     onStepBegun(std::string(u8"Tucking in clipping segments...", 31));
     Audio::HalfwaveTucker::TuckClippingHalfwaves(
-      this->track, canceler, progressCallback
+      track, canceler, progressCallback
     );
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Transcoder::encodeOriginalTrack(
+  void Transcoder::copyAndDeclipTrack(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+    std::vector<float> &samples,
+    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
+  ) {
+    using Nuclex::Support::Events::Delegate;
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
+    );
+
+    onStepBegun(std::string(u8"Tucking in clipping segments...", 31));
+    Audio::HalfwaveTucker::TuckClippingHalfwaves(
+      track, samples, canceler, progressCallback
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Transcoder::encodeTrack(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
+    const std::vector<float> &samples,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::Support::Events::Delegate;
@@ -503,8 +634,10 @@ namespace Nuclex::OpusTranscoder::Services {
     onStepBegun(std::string(u8"Encoding Opus audio stream...", 29));
 
     return Audio::OpusEncoder::Encode(
-      this->track,
+      track,
+      samples,
       this->targetBitrate,
+      this->effort,
       canceler,
       progressCallback
     );

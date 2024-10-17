@@ -66,13 +66,13 @@ namespace Nuclex::OpusTranscoder::Audio {
         {
           // This is by how much we'd have to scale the amplitude down to tuck the half-wave
           // in far enough to stay below the signal ceiling
-          float quotient = std::abs(halfwave.CurrentPeakAmplitude);
+          float quotient = std::abs(halfwave.PeakAmplitude);
 
           // If there is a valid prior peak amplitude, it means we already did the above
           // calculation, yet it didn't bring the peak down far enough. So this time around,
           // we'll calculate how much we will have to overshoot to hit the goal.
-          if(halfwave.PriorVolumeQuotient != 0.0f) {
-            quotient *= halfwave.PriorVolumeQuotient;
+          if(halfwave.CurrentVolumeQuotient != 0.0f) {
+            quotient *= halfwave.CurrentVolumeQuotient;
           }
 
           // Record the current volume so that, after decoding the Opus file, if there is
@@ -159,21 +159,32 @@ namespace Nuclex::OpusTranscoder::Audio {
         // from the decoded Opus stream, but we need to apply them to (a copy of) the original
         // channels, to avoid generation loss when we encode the Opus file once more.
         {
-          // This is by how much we'd have to scale the amplitude down to tuck the half-wave
-          // in far enough to stay below the signal ceiling
-          float quotient = std::abs(halfwave.CurrentPeakAmplitude);
+          float quotient;
 
-          // If there is a valid prior peak amplitude, it means we already did the above
-          // calculation, yet it didn't bring the peak down far enough. So this time around,
-          // we'll calculate how much we will have to overshoot to hit the goal.
-          if(halfwave.PriorVolumeQuotient != 0.0f) {
-            quotient *= halfwave.PriorVolumeQuotient;
+          if(1.0f < halfwave.PeakAmplitude) {
+
+            // This is by how much we'd have to scale the amplitude down to tuck the half-wave
+            // in far enough to stay below the signal ceiling
+            quotient = std::abs(halfwave.PeakAmplitude);
+
+            // If there is a valid prior peak amplitude, it means we already did the above
+            // calculation, yet it didn't bring the peak down far enough. So this time around,
+            // we'll calculate how much we will have to overshoot to hit the goal.
+            if(halfwave.CurrentVolumeQuotient != 0.0f) {
+              quotient *= halfwave.CurrentVolumeQuotient;
+            }
+
+            // Record the current volume so that, after decoding the Opus file, if there is
+            // still clipping, we can record the quotient we tried but which wasn't enough,
+            // which will then be picked up by the compensation just above this statement.
+            halfwave.CurrentVolumeQuotient = quotient;
+
+          } else {
+
+            // The current quotient brings the volume into the intended range
+            quotient = halfwave.CurrentVolumeQuotient;
+
           }
-
-          // Record the current volume so that, after decoding the Opus file, if there is
-          // still clipping, we can record the quotient we tried but which wasn't enough,
-          // which will then be picked up by the compensation just above this statement.
-          halfwave.CurrentVolumeQuotient = quotient;
 
           // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
           for(
