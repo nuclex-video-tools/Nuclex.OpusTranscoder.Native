@@ -22,12 +22,49 @@ limitations under the License.
 
 #include "./ClippingDetector.h"
 
+#include <algorithm>
+
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Value that is used to indicate an invalid index in a list</summary>
   const std::size_t InvalidIndex = std::size_t(-1);
+
+  // ------------------------------------------------------------------------------------------- //
+
+  /// <summary>
+  ///   Checks if the first half-wave's start sample is earlier then the second one's
+  /// </summary>
+  /// <param name="first">First half-wave that will be compared</param>
+  /// <param name="second">Second half-wave that will be compared</param>
+  /// <returns>True if the first half-wave begins earlier than the second</returns?
+  bool halfwaveStartIndexIsLess(
+    const Nuclex::OpusTranscoder::Audio::ClippingHalfwave &first,
+    const Nuclex::OpusTranscoder::Audio::ClippingHalfwave &second
+  ) {
+    return first.PriorZeroCrossingIndex < second.PriorZeroCrossingIndex;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  /// <summary>Inserts a clipping halfwave into a list preserving its ordering</summary>
+  /// <param name="halfwaves">Existing list of half-waves</param>
+  /// <param name="halfwaveToInsert">Half-wave that wil be inserted int othe list</param>
+  void insertOrdered(
+    std::vector<Nuclex::OpusTranscoder::Audio::ClippingHalfwave> &halfwaves,
+    const Nuclex::OpusTranscoder::Audio::ClippingHalfwave &halfwaveToInsert
+  ) {
+    std::vector<Nuclex::OpusTranscoder::Audio::ClippingHalfwave>::iterator insertionIt = (
+      std::lower_bound(
+        halfwaves.begin(), halfwaves.end(),
+        halfwaveToInsert,
+        &halfwaveStartIndexIsLess
+      )
+    );
+
+    halfwaves.insert(insertionIt, halfwaveToInsert);
+  }
 
   // ------------------------------------------------------------------------------------------- //
 
@@ -195,21 +232,15 @@ namespace Nuclex::OpusTranscoder::Audio {
           decodedClippingHalfwaves[index]
         );
         if(existingIndex == InvalidIndex) {
-          sourceTrack->Channels[channelIndex].ClippingHalfwaves.push_back(
+          insertOrdered(
+            sourceTrack->Channels[channelIndex].ClippingHalfwaves,
             decodedClippingHalfwaves[index]
           );
         } else {
           ClippingHalfwave &existingClippingHalfwave = (
             sourceTrack->Channels[channelIndex].ClippingHalfwaves[existingIndex]
           );
-          if(
-            existingClippingHalfwave.PeakAmplitude ==
-            decodedClippingHalfwaves[index].PeakAmplitude
-          ) {
-            ++existingClippingHalfwave.IneffectiveIterationCount;
-          } else {
-            existingClippingHalfwave.PeakAmplitude = decodedClippingHalfwaves[index].PeakAmplitude;
-          }
+          existingClippingHalfwave.PeakAmplitude = decodedClippingHalfwaves[index].PeakAmplitude;
         }
       }
 
@@ -248,7 +279,7 @@ namespace Nuclex::OpusTranscoder::Audio {
         for(
           std::uint64_t sampleIndex = clippingHalfwaves[clipIndex].PriorZeroCrossingIndex;
           sampleIndex < clippingHalfwaves[clipIndex].NextZeroCrossingIndex;
-          sampleIndex += channelCount
+          ++sampleIndex
         ) {
           if(peak < std::abs(halfwaveSamples[0])) {
             peak = std::abs(halfwaveSamples[0]);
@@ -261,11 +292,13 @@ namespace Nuclex::OpusTranscoder::Audio {
         if(peak != clippingHalfwaves[clipIndex].PeakAmplitude) {
           clippingHalfwaves[clipIndex].IneffectiveIterationCount = 0;
           clippingHalfwaves[clipIndex].PeakAmplitude = peak;
-          if(1.0f < peak) {
+        } else {
+          ++clippingHalfwaves[clipIndex].IneffectiveIterationCount;
+        }
+        if(1.0f < peak) {
+          if(clippingHalfwaves[clipIndex].IneffectiveIterationCount < 10) {
             ++clippingPeakCount;
           }
-        } else if(clippingHalfwaves[clipIndex].IneffectiveIterationCount < 10) {
-          ++clippingPeakCount;
         }
 
       } // for each clipping halfwave

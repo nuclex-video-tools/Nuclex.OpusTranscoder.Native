@@ -257,6 +257,7 @@
     <ClCompile Include="Source\Audio\ClippingDetector.cpp" />
     <ClCompile Include="Source\Audio\ClippingHalfwave.cpp" />
     <ClCompile Include="Source\Audio\HalfwaveTucker.cpp" />
+    <ClCompile Include="Source\Audio\Normalizer.cpp" />
     <ClCompile Include="Source\Audio\OpusEncoder.cpp" />
     <ClCompile Include="Source\Audio\Track.cpp" />
     <ClCompile Include="Source\ChannelMapSceneBuilder.cpp" />
@@ -273,6 +274,7 @@
     <ClInclude Include="Source\Audio\ClippingDetector.h" />
     <ClInclude Include="Source\Audio\ClippingHalfwave.h" />
     <ClInclude Include="Source\Audio\HalfwaveTucker.h" />
+    <ClInclude Include="Source\Audio\Normalizer.h" />
     <ClInclude Include="Source\Audio\OpusEncoder.h" />
     <ClInclude Include="Source\Audio\Track.h" />
     <ClInclude Include="Source\ChannelMapSceneBuilder.h" />
