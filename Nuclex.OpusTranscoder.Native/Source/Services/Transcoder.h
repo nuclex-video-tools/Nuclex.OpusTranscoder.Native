@@ -208,16 +208,6 @@ namespace Nuclex::OpusTranscoder::Services {
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 
-    /// <summary>Copies an audio track while removing clipping from it</summary>
-    /// <param name="track">Track that will be de-clipped</param>
-    /// <param name="samples">Sample array the copy will be written into</param>
-    /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
-    private: void copyAndDeclipTrack(
-      const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
-      std::vector<float> &samples,
-      const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
-    );
-
     /// <summary>Remvoes clipping from the original audio track</summary>
     /// <param name="track">Track that will be encoded to Op[us</param>]
     /// <param name="sample">Array containing the interleaved samples to encode</param>

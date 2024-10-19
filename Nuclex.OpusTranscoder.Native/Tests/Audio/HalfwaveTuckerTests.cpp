@@ -131,5 +131,72 @@ namespace Nuclex::OpusTranscoder::Audio {
   }
 
   // ------------------------------------------------------------------------------------------- //
+#if 0 // UNIT TEST WORKS, BUT METHOD CORRUPTS AUDIO TRACK IN REAL WORLD DATA
+  TEST(HalfwaveTuckerTests, TucksClippingHalfwavesIntoClonedChannel) {
+    using Nuclex::Support::Events::Delegate;
+    using Nuclex::Support::Threading::StopSource;
+    using Nuclex::Support::Threading::StopToken;
+
+    std::shared_ptr<Track> track = makeStereoTrack();
+    track->Samples.resize(18);
+
+    track->Samples[0] = 1.1f;   // 0
+    track->Samples[2] = 0.9f;   // 1
+    track->Samples[4] = 0.5f;   // 2
+    track->Samples[6] = 0.3f;   // 3
+    track->Samples[8] = 0.1f;   // 4
+    track->Samples[10] = -0.1f; // 5
+    track->Samples[12] = -0.3f; // 6
+    track->Samples[14] = -0.5f; // 7
+    track->Samples[16] = -0.3f; // 8
+
+    track->Samples[1] = 0.1f;   // 0
+    track->Samples[3] = -0.1f;  // 1
+    track->Samples[5] = -0.3f;  // 2
+    track->Samples[7] = -0.5f;  // 3
+    track->Samples[9] = -0.7f;  // 4
+    track->Samples[11] = -0.9f; // 5
+    track->Samples[13] = -1.1f; // 6
+    track->Samples[15] = -0.5f; // 7
+    track->Samples[17] = 0.1f;  // 8
+
+    track->Channels[0].ClippingHalfwaves.emplace_back(
+      0, 0, 5, 2.0f
+    );
+    track->Channels[1].ClippingHalfwaves.emplace_back(
+      1, 6, 8, 3.0f
+    );
+
+    std::vector<float> copy(18);
+
+    Delegate<void(float)> progressCallback = (
+      Delegate<void(float)>::Create<&doNothing>()
+    );
+    HalfwaveTucker::TuckClippingHalfwaves(
+      track, copy, StopSource::Create()->GetToken(), progressCallback
+    );
+
+    EXPECT_EQ(copy[0], 1.1f / (2.0f / MinusOneThousandthDecibel)); // 0
+    EXPECT_EQ(copy[2], 0.9f / (2.0f / MinusOneThousandthDecibel)); // 1
+    EXPECT_EQ(copy[4], 0.5f / (2.0f / MinusOneThousandthDecibel)); // 2
+    EXPECT_EQ(copy[6], 0.3f / (2.0f / MinusOneThousandthDecibel)); // 3
+    EXPECT_EQ(copy[8], 0.1f / (2.0f / MinusOneThousandthDecibel)); // 4
+    EXPECT_EQ(copy[10], -0.1f);                                    // 5
+    EXPECT_EQ(copy[12], -0.3f);                                    // 6
+    EXPECT_EQ(copy[14], -0.5f);                                    // 7
+    EXPECT_EQ(copy[16], -0.3f);                                    // 8
+
+    EXPECT_EQ(copy[1], 0.1f);                                        // 0
+    EXPECT_EQ(copy[3], -0.1f / (3.0f / MinusOneThousandthDecibel));  // 1
+    EXPECT_EQ(copy[5], -0.3f / (3.0f / MinusOneThousandthDecibel));  // 2
+    EXPECT_EQ(copy[7], -0.5f / (3.0f / MinusOneThousandthDecibel));  // 3
+    EXPECT_EQ(copy[9], -0.7f / (3.0f / MinusOneThousandthDecibel));  // 4
+    EXPECT_EQ(copy[11], -0.9f / (3.0f / MinusOneThousandthDecibel)); // 5
+    EXPECT_EQ(copy[13], -1.1f / (3.0f / MinusOneThousandthDecibel)); // 6
+    EXPECT_EQ(copy[15], -0.5f / (3.0f / MinusOneThousandthDecibel)); // 7
+    EXPECT_EQ(copy[17], 0.1f);                                       // 8
+  }
+#endif
+  // ------------------------------------------------------------------------------------------- //
 
 } // namespace Nuclex::OpusTranscoder::Audio

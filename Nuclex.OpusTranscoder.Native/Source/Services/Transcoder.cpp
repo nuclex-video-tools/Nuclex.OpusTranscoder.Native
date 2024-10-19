@@ -337,6 +337,7 @@ namespace Nuclex::OpusTranscoder::Services {
           std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodedOpusFile = (
             decodeAudioFile(encodedOpusFile, canceler)
           );
+          assert(decodedOpusFile->Samples.size() == track->Samples.size());
 
           findClippingHalfwaves(decodedOpusFile, canceler);
           Audio::ClippingDetector::Integrate(track, decodedOpusFile);
@@ -354,6 +355,8 @@ namespace Nuclex::OpusTranscoder::Services {
             Nuclex::Support::Text::lexical_append(prefix, step);
             prefix.append(u8" (", 2);
             Nuclex::Support::Text::lexical_append(prefix, remaining);
+            //prefix.append(u8" / ", 3);
+            //Nuclex::Support::Text::lexical_append(prefix, remaining);
             prefix.append(u8" issues): ", 10);
             setStepPrefixMessge(prefix);
           }
@@ -362,8 +365,21 @@ namespace Nuclex::OpusTranscoder::Services {
           // us one full reallocation to hold the original samples with de-clipped
           // half-waves (we don't touch the original audio track because we don't
           // want to modify it multiple times in succession - generation loss and all).
-          copyAndDeclipTrack(track, decodedOpusFile->Samples, canceler);
-          encodedOpusFile = encodeTrack(track, decodedOpusFile->Samples, canceler);
+          //copyAndDeclipTrack(track, decodedOpusFile->Samples, canceler);
+          std::copy_n(track->Samples.data(), track->Samples.size(), decodedOpusFile->Samples.data());
+          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
+            decodedOpusFile->Channels[index].ClippingHalfwaves.swap(
+              track->Channels[index].ClippingHalfwaves
+            );
+          }
+          declipTrack(decodedOpusFile, canceler);
+          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
+            track->Channels[index].ClippingHalfwaves = (
+              decodedOpusFile->Channels[index].ClippingHalfwaves
+            );
+          }
+
+          encodedOpusFile = encodeTrack(decodedOpusFile, decodedOpusFile->Samples, canceler);
 
           // Free the memory of the raw samples used for encoding
           std::vector<float>().swap(decodedOpusFile->Samples); // free all memory
@@ -629,25 +645,6 @@ namespace Nuclex::OpusTranscoder::Services {
     onStepBegun(std::string(u8"Tucking in clipping segments...", 31));
     Audio::HalfwaveTucker::TuckClippingHalfwaves(
       track, canceler, progressCallback
-    );
-  }
-
-  // ------------------------------------------------------------------------------------------- //
-
-  void Transcoder::copyAndDeclipTrack(
-    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
-    std::vector<float> &samples,
-    const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
-  ) {
-    using Nuclex::Support::Events::Delegate;
-
-    Delegate<void(float)> progressCallback = (
-      Delegate<void(float)>::Create<Transcoder, &Transcoder::onStepProgressed>(this)
-    );
-
-    onStepBegun(std::string(u8"Tucking in clipping segments...", 31));
-    Audio::HalfwaveTucker::TuckClippingHalfwaves(
-      track, samples, canceler, progressCallback
     );
   }
 

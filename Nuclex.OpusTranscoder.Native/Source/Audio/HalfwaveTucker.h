@@ -45,6 +45,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
 
+#if 0 // DANGER! THIS METHOD CONTAINS AN AUDIO-CORRUPTING BUG!
     /// <summary>Tucks any half-waves that extend above the signal ceiling in</summary>
     /// <param name-"track">Track in which half-waves will be tucked</param>
     /// <param name-"tuckedSamples">
@@ -58,6 +59,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
+#endif
 
   };
 

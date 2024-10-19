@@ -144,7 +144,7 @@ namespace Nuclex::OpusTranscoder::Audio {
   }
 
   // ------------------------------------------------------------------------------------------- //
-
+#if 0 // DANGER! THIS METHOD CONTAINS AN AUDIO-CORRUPTING BUG!
   void HalfwaveTucker::TuckClippingHalfwaves(
     const std::shared_ptr<Track> &track,
     std::vector<float> &tuckedSamples,
@@ -241,7 +241,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
     } // for each channel
   }
-
+#endif
   // ------------------------------------------------------------------------------------------- //
 
 } // namespace Nuclex::OpusTranscoder::Audio
