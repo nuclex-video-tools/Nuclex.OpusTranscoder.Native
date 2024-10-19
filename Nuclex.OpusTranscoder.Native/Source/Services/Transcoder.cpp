@@ -311,6 +311,9 @@ namespace Nuclex::OpusTranscoder::Services {
       // If de-clipping is active, scan the original audio samples for clipping
       if(this->declip) {
         findClippingHalfwaves(track, canceler);
+#if !defined(NDEBUG)
+        track->DebugOutputAllClippingHalfwaves();
+#endif
 
         // For single-pass declipping, all we do is de-clip the original audio track.
         // In case iterative declipping is chosen, we encode and verify first.
@@ -336,11 +339,12 @@ namespace Nuclex::OpusTranscoder::Services {
           );
 
           findClippingHalfwaves(decodedOpusFile, canceler);
-          Audio::ClippingDetector::IntegrateClippingInstances(track, decodedOpusFile);
+          Audio::ClippingDetector::Integrate(track, decodedOpusFile);
 
           std::size_t remaining = updateClippingHalfwaves(
             track, decodedOpusFile->Samples, canceler
           );
+          track->DebugOutputAllClippingHalfwaves();
           if(remaining == 0) {
             break;
           }
@@ -605,7 +609,7 @@ namespace Nuclex::OpusTranscoder::Services {
     );
 
     onStepBegun(std::string(u8"Checking audio track for clipping...", 36));
-    return Audio::ClippingDetector::UpdateClippingHalfwaves(
+    return Audio::ClippingDetector::Update(
       track, samples, canceler, progressCallback
     );
   }

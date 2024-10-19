@@ -33,6 +33,60 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  /// <summary>
+  ///   Checks if the volume quotient needs to be increased to fix clipping and either
+  ///   recalculates it based on the new information or returns the volume quotient
+  ///   that has proven to fix the clipping
+  /// </summary>
+  /// <param name="halfwave">
+  ///   Half-wave the will be updated or simply have its volume quotient returned
+  /// </param>
+  /// <returns>The volume quotient that should be applied to the half-wave</returns>
+  /// <remarks>
+  ///   We completely rely on the measured peak here that was collected by an earlier run
+  ///   of the clipping detector, rather than doing our own scan at this point. The reason
+  ///   is that, for the iterative de-clipper, the peaks will have been collected from
+  ///   the decoded Opus stream, but we need to apply them to the original channels,
+  ///   to avoid generation loss when we encode the Opus file once more.
+  /// </reamrks>
+  float updateAndReturnVolumeQuotient(
+    Nuclex::OpusTranscoder::Audio::ClippingHalfwave &halfwave
+  ) {
+    float quotient;
+
+    if(1.0f < halfwave.PeakAmplitude) {
+
+      // This is by how much we'd have to scale the amplitude down to tuck the half-wave
+      // in far enough to stay below the signal ceiling
+      quotient = std::abs(halfwave.PeakAmplitude);
+
+      // If there is a valid prior peak amplitude, it means we already did the above
+      // calculation, yet it didn't bring the peak down far enough. So this time around,
+      // we'll calculate how much we will have to overshoot to hit the goal.
+      if(halfwave.VolumeQuotient != 0.0f) {
+        quotient *= halfwave.VolumeQuotient;
+      }
+
+      // Record the current volume so that, after decoding the Opus file, if there is
+      // still clipping, we can record the quotient we tried but which wasn't enough,
+      // which will then be picked up by the compensation just above this statement.
+      halfwave.VolumeQuotient = quotient;
+
+    } else {
+
+      // The current quotient brings the volume into the intended range
+      quotient = halfwave.VolumeQuotient;
+
+    }
+
+    // Normalize to -0.001 dB rather than 0 dB for a tiny safety margin.
+    quotient /= MinusOneThousandthDecibel; // divide because we've got a quotient not factor
+
+    return quotient;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
 } // anonymous namespace
 
 namespace Nuclex::OpusTranscoder::Audio {
@@ -59,51 +113,31 @@ namespace Nuclex::OpusTranscoder::Audio {
 
         samples += (halfwave.PriorZeroCrossingIndex - skipStartIndex) * channelCount;
 
-        // We completely rely on the measured peak here and don't update the scaling factor.
-        // The reason is that, for the iterative de-clipper, the peaks will have been collected
-        // from the decoded Opus stream, but we need to apply them to (a copy of) the original
-        // channels, to avoid generation loss when we encode the Opus file once more.
-        {
-          // This is by how much we'd have to scale the amplitude down to tuck the half-wave
-          // in far enough to stay below the signal ceiling
-          float quotient = std::abs(halfwave.PeakAmplitude);
+        float quotient = updateAndReturnVolumeQuotient(halfwave);
 
-          // If there is a valid prior peak amplitude, it means we already did the above
-          // calculation, yet it didn't bring the peak down far enough. So this time around,
-          // we'll calculate how much we will have to overshoot to hit the goal.
-          if(halfwave.CurrentVolumeQuotient != 0.0f) {
-            quotient *= halfwave.CurrentVolumeQuotient;
-          }
+        // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
+        for(
+          std::uint64_t index = halfwave.PriorZeroCrossingIndex;
+          index < halfwave.NextZeroCrossingIndex;
+          ++index
+        ) {
+          samples[0] /= quotient;
+          samples += channelCount;
 
-          // Record the current volume so that, after decoding the Opus file, if there is
-          // still clipping, we can record the quotient we tried but which wasn't enough,
-          // which will then be picked up by the compensation just above this statement.
-          halfwave.CurrentVolumeQuotient = quotient;
+          if((index & 0x2fff) == 0) {
+            canceler->ThrowIfCanceled();
+            progressCallback(
+              (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
+              (
+                static_cast<float>(index) /
+                static_cast<float>(frameCount) /
+                static_cast<float>(channelCount)
+              )
+            );
+          } // if progress report interval hit
+        } // for each sample in the clipping half-wave
 
-          // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
-          for(
-            std::uint64_t index = halfwave.PriorZeroCrossingIndex;
-            index < halfwave.NextZeroCrossingIndex;
-            ++index
-          ) {
-            samples[0] /= quotient;
-            samples += channelCount;
-
-            if((index & 0x2fff) == 0) {
-              canceler->ThrowIfCanceled();
-              progressCallback(
-                (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-                (
-                  static_cast<float>(index) /
-                  static_cast<float>(frameCount) /
-                  static_cast<float>(channelCount)
-                )
-              );
-            } // if progress report interval hit
-          } // for each sample in the clipping half-wave
-
-          skipStartIndex = halfwave.NextZeroCrossingIndex;
-        }
+        skipStartIndex = halfwave.NextZeroCrossingIndex;
 
       } // for each clipping halfwave identified
     } // for each channel
@@ -154,64 +188,33 @@ namespace Nuclex::OpusTranscoder::Audio {
           } // if progress report interval hit
         } // for each sample up to the clipping half-wave
 
-        // We completely rely on the measured peak here and don't update the scaling factor.
-        // The reason is that, for the iterative de-clipper, the peaks will have been collected
-        // from the decoded Opus stream, but we need to apply them to (a copy of) the original
-        // channels, to avoid generation loss when we encode the Opus file once more.
-        {
-          float quotient;
+        float quotient = updateAndReturnVolumeQuotient(halfwave);
 
-          if(1.0f < halfwave.PeakAmplitude) {
+        // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
+        for(
+          std::uint64_t index = halfwave.PriorZeroCrossingIndex;
+          index < halfwave.NextZeroCrossingIndex;
+          ++index
+        ) {
+          *write = *read / quotient;
 
-            // This is by how much we'd have to scale the amplitude down to tuck the half-wave
-            // in far enough to stay below the signal ceiling
-            quotient = std::abs(halfwave.PeakAmplitude);
+          read += channelCount;
+          write += channelCount;
 
-            // If there is a valid prior peak amplitude, it means we already did the above
-            // calculation, yet it didn't bring the peak down far enough. So this time around,
-            // we'll calculate how much we will have to overshoot to hit the goal.
-            if(halfwave.CurrentVolumeQuotient != 0.0f) {
-              quotient *= halfwave.CurrentVolumeQuotient;
-            }
+          if((index & 0x2fff) == 0) {
+            canceler->ThrowIfCanceled();
+            progressCallback(
+              (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
+              (
+                static_cast<float>(index) /
+                static_cast<float>(frameCount) /
+                static_cast<float>(channelCount)
+              )
+            );
+          } // if progress report interval hit
+        } // for each sample in the clipping half-wave
 
-            // Record the current volume so that, after decoding the Opus file, if there is
-            // still clipping, we can record the quotient we tried but which wasn't enough,
-            // which will then be picked up by the compensation just above this statement.
-            halfwave.CurrentVolumeQuotient = quotient;
-
-          } else {
-
-            // The current quotient brings the volume into the intended range
-            quotient = halfwave.CurrentVolumeQuotient;
-
-          }
-
-          // Copy the data inside the clipping half-wave scaled down to the -1.0 .. +1.0 level
-          for(
-            std::uint64_t index = halfwave.PriorZeroCrossingIndex;
-            index < halfwave.NextZeroCrossingIndex;
-            ++index
-          ) {
-            *write = *read / quotient;
-
-            read += channelCount;
-            write += channelCount;
-
-            if((index & 0x2fff) == 0) {
-              canceler->ThrowIfCanceled();
-              progressCallback(
-                (static_cast<float>(channelIndex) / static_cast<float>(channelCount)) +
-                (
-                  static_cast<float>(index) /
-                  static_cast<float>(frameCount) /
-                  static_cast<float>(channelCount)
-                )
-              );
-            } // if progress report interval hit
-          } // for each sample in the clipping half-wave
-
-          copyStartIndex = halfwave.NextZeroCrossingIndex;
-        }
+        copyStartIndex = halfwave.NextZeroCrossingIndex;
 
       } // for each clipping halfwave identified
 
@@ -221,6 +224,8 @@ namespace Nuclex::OpusTranscoder::Audio {
         read += channelCount;
         write += channelCount;
 
+        // Progress update notification here, too, because for a track with little or
+        // no clipping, this loop could potentially cover the brunt of the audio data,
         if((index & 0x2fff) == 0) {
           canceler->ThrowIfCanceled();
           progressCallback(
@@ -233,6 +238,7 @@ namespace Nuclex::OpusTranscoder::Audio {
           );
         } // if progress report interval hit
       } // for each sample between the last clipping half-wave and the channel's end
+
     } // for each channel
   }
 

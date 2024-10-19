@@ -39,9 +39,24 @@ namespace Nuclex::OpusTranscoder::Audio {
       Channels(),
       Iteration(0) {}
 
-    public: float *SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex);
+    /// <summary>Provides a pointer to the specified interleaved sample</summary>
+    /// <param name="channelIndex">Index of the channel the sample is in</param>
+    /// <param name="sampleIndex">Index of the sample inside the channel</param>
+    /// <returns>A pointer to the requested sample</returns>
+    public: inline float *SampleAt(
+      std::size_t channelIndex, std::uint64_t sampleIndex
+    );
 
-    public: const float *SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) const;
+    /// <summary>Provides a pointer to the specified interleaved sample</summary>
+    /// <param name="channelIndex">Index of the channel the sample is in</param>
+    /// <param name="sampleIndex">Index of the sample inside the channel</param>
+    /// <returns>A pointer to the requested sample</returns>
+    public: inline const float *SampleAt(
+      std::size_t channelIndex, std::uint64_t sampleIndex
+    ) const;
+
+    /// <summary>Prints a summary of all clipping half-waves to stdout</summary>
+    public: void DebugOutputAllClippingHalfwaves();
 
     /// <summary>Stores the decoded samples of all channels</summary>
     public: std::vector<float> Samples;
@@ -57,7 +72,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) {
+  inline float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) {
     return (
       this->Samples.data() + // Pointer to start of interleaved sample array
       channelIndex + // Start at first sample of selected channel
@@ -67,7 +82,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  const float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) const {
+  inline const float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) const {
     return (
       this->Samples.data() + // Pointer to start of interleaved sample array
       channelIndex + // Start at first sample of selected channel

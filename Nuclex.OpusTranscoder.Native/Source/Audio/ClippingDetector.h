@@ -54,7 +54,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="decodedTrack">
     ///   Decoded audio track whose clipping halfwaves will be integrated
     /// </param>
-    public: static void IntegrateClippingInstances(
+    public: static void Integrate(
       const std::shared_ptr<Track> &sourceTrack,
       const std::shared_ptr<Track> &decodedTrack
     );
@@ -67,7 +67,7 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <param name="progressCallback">Callback to which progress reports should be sent</param>
     /// <returns>The number of half-ways that are still suffering from clipping</returns>
-    public: static std::size_t UpdateClippingHalfwaves(
+    public: static std::size_t Update(
       const std::shared_ptr<Track> &track,
       const std::vector<float> &samples,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,

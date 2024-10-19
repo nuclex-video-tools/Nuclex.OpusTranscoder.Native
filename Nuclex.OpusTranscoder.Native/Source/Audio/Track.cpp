@@ -22,9 +22,50 @@ limitations under the License.
 
 #include "./Track.h"
 
-// --------------------------------------------------------------------------------------------- //
+#if !defined(NDEBUG)
+#include <Nuclex/Audio/Processing/DecibelConverter.h>
+#include <iostream>
+#endif
 
-// This file is only here to guarantee that its associated header has no hidden
-// dependencies and can be included on its own
+namespace Nuclex::OpusTranscoder::Audio {
 
-// --------------------------------------------------------------------------------------------- //
+  // ------------------------------------------------------------------------------------------- //
+
+  void Track::DebugOutputAllClippingHalfwaves() {
+#if !defined(NDEBUG)
+    using Nuclex::Audio::Processing::DecibelConverter;
+
+    std::size_t channelCount = this->Channels.size();
+    for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+      std::string channelName = Nuclex::Audio::StringFromChannelPlacement(
+        this->Channels[channelIndex].Placement
+      );
+      std::cout << "Channel " << channelName << std::endl;
+
+      std::size_t clipCount = this->Channels[channelIndex].ClippingHalfwaves.size();
+      for(std::size_t clipIndex = 0; clipIndex < clipCount; ++clipIndex) {
+        ClippingHalfwave &halfwave = this->Channels[channelIndex].ClippingHalfwaves[clipIndex];
+
+        float decibels = DecibelConverter::FromLinearAmplitude(halfwave.PeakAmplitude);
+
+        std::cout << "\tClipping Halfwave " << (clipIndex + 1)
+                  << " [" << std::hex << halfwave.PeakIndex << std::dec << "] -> "
+                  << (1.0f < halfwave.PeakAmplitude ? "open" : "fixed") << std::endl;
+
+        std::cout << "\t\tPeak: " << halfwave.PeakAmplitude
+                  << " (" << decibels << " dB) at "
+                  << halfwave.PeakIndex << std::endl;
+
+        std::cout << "\t\tVolume quotient: " << halfwave.VolumeQuotient << std::endl;
+
+        std::cout << "\t\tIneffective adjustment count: " << halfwave.IneffectiveIterationCount << std::endl;
+      }
+
+    }
+#endif
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+} // namespace Nuclex::OpusTranscoder::Audio
+

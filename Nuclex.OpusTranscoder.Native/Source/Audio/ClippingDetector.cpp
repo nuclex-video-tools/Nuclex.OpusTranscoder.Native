@@ -121,30 +121,27 @@ namespace {
   ) {
     std::size_t channelCount = sourceTrack->Channels.size();
 
-    const float *samples = (
-      sourceTrack->Samples.data() +
-      (sampleIndex * channelCount) +
-      channelIndex
-    );
+    const float *forwardRead = sourceTrack->SampleAt(channelIndex, sampleIndex);
 
-    bool startsAboveZero = (samples[0] >= 0.0f);
+    bool startsAboveZero = (forwardRead[0] >= 0.0f);
 
     // Figure out the earliest sample that is still on the same side of the zero line
     // as the sample from which the search started. As per usual conventions, The start index
     // is inclusive, so it points at the same that is already on the same side.
     std::uint64_t priorCrossingIndex = sampleIndex;
     {
-      const float *samplesCopy = samples;
+      const float *backwardRead = forwardRead;
       while(0 < priorCrossingIndex) {
-        samplesCopy -= channelCount;
-        bool priorIsAboveZero = samplesCopy[0];
+        backwardRead -= channelCount; // Step back to before index counter
+        bool priorIsAboveZero = backwardRead[0]; // Read preceding sample
 
         if(priorIsAboveZero != startsAboveZero) {
           break;
         }
 
+        // Adjust index *after* checking sample, so when loop breaks,
+        // the index is still on sample that starts the half-wave
         --priorCrossingIndex;
-        samplesCopy -= channelCount;
       }
     }
 
@@ -153,25 +150,30 @@ namespace {
     // an immediate step forward because we expect the start sample to be a valid index.
     std::uint64_t nextCrossingIndex = sampleIndex;
     {
-      samples += channelCount;
+      // We don't need to re-check the starting sample (and want the end to be at least
+      // on starting sample + 1), so skip over it.
+      forwardRead += channelCount;
       ++nextCrossingIndex;
 
       std::uint64_t endIndex = sourceTrack->Samples.size();
       while(nextCrossingIndex < endIndex) {
-        bool isAboveZero = samples[0];
+        bool isAboveZero = forwardRead[0];
 
         if(isAboveZero != startsAboveZero) {
           break;
         }
 
+        // In this direction, we advance both index and read pointer at the same time
+        // because we want the index return to be one past the last sample that is
+        // within the half-wave.
         ++nextCrossingIndex;
-        samples += channelCount;
+        forwardRead += channelCount;
       }
     }
 
     // Obviously, the sampleIndex will likely not be the peak and we leave the peak
     // at 0.0 because the actual peak is unknown to us (it is in the other, decoded
-    // sample array). So an UpdateClippingHalfwaves() call is needed to fix that, too.
+    // sample array). So an Update() call is needed to fix that, too.
     return Nuclex::OpusTranscoder::Audio::ClippingHalfwave(
       priorCrossingIndex, sampleIndex, nextCrossingIndex, 0.0f
     );
@@ -275,7 +277,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void ClippingDetector::IntegrateClippingInstances(
+  void ClippingDetector::Integrate(
     const std::shared_ptr<Track> &sourceTrack,
     const std::shared_ptr<Track> &decodedTrack
   ) {
@@ -316,7 +318,7 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
-  std::size_t ClippingDetector::UpdateClippingHalfwaves(
+  std::size_t ClippingDetector::Update(
     const std::shared_ptr<Track> &track,
     const std::vector<float> &samples,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
@@ -333,28 +335,37 @@ namespace Nuclex::OpusTranscoder::Audio {
       std::vector<ClippingHalfwave> &clippingHalfwaves = (
         track->Channels[channelIndex].ClippingHalfwaves
       );
+
       std::size_t clippingHalfwaveCount = clippingHalfwaves.size();
       for(std::size_t clipIndex = 0; clipIndex < clippingHalfwaveCount; ++clipIndex) {
 
+        // Re-scan the samples in this half-wave and determine their current
+        // peak amplitude and the index of the peak amplitude sample.
         float peak = 0.0f;
         std::size_t peakIndex = clippingHalfwaves[clipIndex].PriorZeroCrossingIndex;
-        const float *halfwaveSamples = (
-          samples.data() +
-          (clippingHalfwaves[clipIndex].PriorZeroCrossingIndex * channelCount) +
-          channelIndex
-        );
-        for(
-          std::uint64_t sampleIndex = clippingHalfwaves[clipIndex].PriorZeroCrossingIndex;
-          sampleIndex < clippingHalfwaves[clipIndex].NextZeroCrossingIndex;
-          ++sampleIndex
-        ) {
-          if(peak < std::abs(halfwaveSamples[0])) {
-            peak = std::abs(halfwaveSamples[0]);
-            peakIndex = sampleIndex;
-          }
-          halfwaveSamples += channelCount;
-        } // for each sample in a clipping halfwave
+        {
+          const float *halfwaveSamples = (
+            samples.data() +
+            (clippingHalfwaves[clipIndex].PriorZeroCrossingIndex * channelCount) +
+            channelIndex
+          );
+          for(
+            std::uint64_t sampleIndex = clippingHalfwaves[clipIndex].PriorZeroCrossingIndex;
+            sampleIndex < clippingHalfwaves[clipIndex].NextZeroCrossingIndex;
+            ++sampleIndex
+          ) {
+            if(peak < std::abs(halfwaveSamples[0])) {
+              peak = std::abs(halfwaveSamples[0]);
+              peakIndex = sampleIndex;
+            }
+            halfwaveSamples += channelCount;
+          } // for each sample in a clipping halfwave
+        } // beauty scope to determine peak and peak index
 
+        // Now we know the new peak, update the recorded peak in the half-wave with it.
+        // At this point, we also count up the 'IneffectiveIterationCount' for any
+        // peaks that remain unchanged compared to the previous iteration to allow us
+        // to give up on those that we can't get moving.
         clippingHalfwaves[clipIndex].PeakIndex = peakIndex;
         if(peak != clippingHalfwaves[clipIndex].PeakAmplitude) {
           clippingHalfwaves[clipIndex].IneffectiveIterationCount = 0;
@@ -362,6 +373,11 @@ namespace Nuclex::OpusTranscoder::Audio {
         } else {
           ++clippingHalfwaves[clipIndex].IneffectiveIterationCount;
         }
+
+        // Count the total number of half-waves that are still clipping. This count is
+        // also the exit condition in the rectifying loop, so if a half-wave has not
+        // improved after 10 (increasingly drastic) attempts, don't count it anymore,
+        // as it is now considered a lost cause.
         if(1.0f < peak) {
           if(clippingHalfwaves[clipIndex].IneffectiveIterationCount < 10) {
             ++clippingPeakCount;
