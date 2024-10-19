@@ -31,6 +31,22 @@ namespace Nuclex::OpusTranscoder::Audio {
 
   // ------------------------------------------------------------------------------------------- //
 
+  void Track::CopyClippingHalfwavesInto(
+    const std::shared_ptr<Track> &otherTrack
+  ) const {
+    if(this->Channels.size() != otherTrack->Channels.size()) {
+      throw std::logic_error(
+        u8"Unable to copy, other audio track has mismatching channel layout"
+      );
+    }
+
+    for(std::size_t index = 0; index < this->Channels.size(); ++index) {
+      otherTrack->Channels[index].ClippingHalfwaves = this->Channels[index].ClippingHalfwaves;
+    }
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
   void Track::DebugOutputAllClippingHalfwaves() {
 #if !defined(NDEBUG)
     using Nuclex::Audio::Processing::DecibelConverter;

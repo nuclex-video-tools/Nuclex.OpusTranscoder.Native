@@ -325,7 +325,7 @@ namespace Nuclex::OpusTranscoder::Services {
       // Now encode the file. Unless iterative declipping is used, this will be
       // saved to disk right after. Otherwise, we begin the long-winded declipping loop
       std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodedOpusFile = (
-        encodeTrack(track, track->Samples, canceler)
+        encodeTrack(track, canceler)
       );
       if(this->declip && this->iterativeDeclip) {
         setStepPrefixMessge(std::string(u8"Step 1: ", 8));
@@ -345,7 +345,9 @@ namespace Nuclex::OpusTranscoder::Services {
           std::size_t remaining = updateClippingHalfwaves(
             track, decodedOpusFile->Samples, canceler
           );
+#if !defined(NDEBUG)
           track->DebugOutputAllClippingHalfwaves();
+#endif
           if(remaining == 0) {
             break;
           }
@@ -361,28 +363,27 @@ namespace Nuclex::OpusTranscoder::Services {
             setStepPrefixMessge(prefix);
           }
 
-          // We'll sneakily reuse the decoded Opus file's sample array. This saves
-          // us one full reallocation to hold the original samples with de-clipped
-          // half-waves (we don't touch the original audio track because we don't
-          // want to modify it multiple times in succession - generation loss and all).
-          //copyAndDeclipTrack(track, decodedOpusFile->Samples, canceler);
-          std::copy_n(track->Samples.data(), track->Samples.size(), decodedOpusFile->Samples.data());
-          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
-            decodedOpusFile->Channels[index].ClippingHalfwaves.swap(
-              track->Channels[index].ClippingHalfwaves
+          // We'll sneakily reuse the decoded Opus file's sample array to take a copy
+          // of the untouched original and declip it. This saves us one full reallocation
+          std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> declippedTrack;
+          {
+            declippedTrack = decodedOpusFile;
+            std::copy_n(
+              track->Samples.data(), track->Samples.size(), declippedTrack->Samples.data()
             );
-          }
-          declipTrack(decodedOpusFile, canceler);
-          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
-            track->Channels[index].ClippingHalfwaves = (
-              decodedOpusFile->Channels[index].ClippingHalfwaves
-            );
+            track->CopyClippingHalfwavesInto(declippedTrack);
+            declipTrack(declippedTrack, canceler);
+            declippedTrack->CopyClippingHalfwavesInto(track);
           }
 
-          encodedOpusFile = encodeTrack(decodedOpusFile, decodedOpusFile->Samples, canceler);
+          // Now encode the de-clipped track so we can check if that took care of all
+          // the instances of clipping in the output
+          encodedOpusFile = encodeTrack(declippedTrack, canceler);
 
           // Free the memory of the raw samples used for encoding
-          std::vector<float>().swap(decodedOpusFile->Samples); // free all memory
+          std::vector<float>().swap(declippedTrack->Samples); // free all memory
+          declippedTrack.reset(),
+          decodedOpusFile.reset();
 
         } // for each iteration attempting to de-clip the output
       } // if iterative clipping enabled
@@ -652,7 +653,6 @@ namespace Nuclex::OpusTranscoder::Services {
 
   std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Transcoder::encodeTrack(
     const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
-    const std::vector<float> &samples,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
     using Nuclex::Support::Events::Delegate;
@@ -665,7 +665,6 @@ namespace Nuclex::OpusTranscoder::Services {
 
     return Audio::OpusEncoder::Encode(
       track,
-      samples,
       this->targetBitrate,
       this->effort,
       canceler,

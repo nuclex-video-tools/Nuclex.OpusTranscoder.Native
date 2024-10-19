@@ -25,6 +25,7 @@ limitations under the License.
 #include "./Channel.h"
 
 #include <vector>
+#include <memory> // for std::shared_ptr
 
 namespace Nuclex::OpusTranscoder::Audio {
 
@@ -38,6 +39,12 @@ namespace Nuclex::OpusTranscoder::Audio {
       Samples(),
       Channels(),
       Iteration(0) {}
+
+    /// <summary>Copies the clipping data into another track</summary>
+    /// <param name="otherTrack">Track the clipping data will be copied into</param>
+    public: void CopyClippingHalfwavesInto(
+      const std::shared_ptr<Track> &otherTrack
+    ) const;
 
     /// <summary>Provides a pointer to the specified interleaved sample</summary>
     /// <param name="channelIndex">Index of the channel the sample is in</param>

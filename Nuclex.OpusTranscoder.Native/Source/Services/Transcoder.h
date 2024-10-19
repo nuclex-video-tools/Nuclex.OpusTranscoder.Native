@@ -210,11 +210,9 @@ namespace Nuclex::OpusTranscoder::Services {
 
     /// <summary>Remvoes clipping from the original audio track</summary>
     /// <param name="track">Track that will be encoded to Op[us</param>]
-    /// <param name="sample">Array containing the interleaved samples to encode</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     private: std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> encodeTrack(
       const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &track,
-      const std::vector<float> &samples,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
 

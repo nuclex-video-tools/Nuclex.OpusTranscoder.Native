@@ -45,7 +45,6 @@ namespace Nuclex::OpusTranscoder::Audio {
     /// <returns>A virtual file containing the encoded Opus file contents</returns>
     public: static std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> Encode(
       const std::shared_ptr<Track> &track,
-      const std::vector<float> &samples,
       float bitrate,
       float effort,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
