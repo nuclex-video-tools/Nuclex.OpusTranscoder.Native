@@ -166,6 +166,8 @@ namespace Nuclex::OpusTranscoder {
     private: std::shared_ptr<Services::Transcoder> opusTranscoder;
     /// <summary>Metadata for the currently selected input audio file</summary>
     private: std::optional<Nuclex::Audio::TrackInfo> metadata;
+    /// <summary>Whether the main window thinks a transcode is currentl ongoign</summary>
+    private: bool isTranscoding;
 
   };
 

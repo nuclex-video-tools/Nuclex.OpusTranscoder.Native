@@ -38,7 +38,11 @@ namespace Nuclex::OpusTranscoder::Audio {
       Samples(),
       Channels(),
       Iteration(0) {}
-  
+
+    public: float *SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex);
+
+    public: const float *SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) const;
+
     /// <summary>Stores the decoded samples of all channels</summary>
     public: std::vector<float> Samples;
     /// <summary>Samples per second the track plays at</summary>
@@ -50,6 +54,26 @@ namespace Nuclex::OpusTranscoder::Audio {
     public: std::size_t Iteration;
 
   };
+
+  // ------------------------------------------------------------------------------------------- //
+
+  float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) {
+    return (
+      this->Samples.data() + // Pointer to start of interleaved sample array
+      channelIndex + // Start at first sample of selected channel
+      (sampleIndex * this->Channels.size()) // Go forward in interleaved samples
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  const float *Track::SampleAt(std::size_t channelIndex, std::uint64_t sampleIndex) const {
+    return (
+      this->Samples.data() + // Pointer to start of interleaved sample array
+      channelIndex + // Start at first sample of selected channel
+      (sampleIndex * this->Channels.size()) // Go forward in interleaved samples
+    );
+  }
 
   // ------------------------------------------------------------------------------------------- //
 

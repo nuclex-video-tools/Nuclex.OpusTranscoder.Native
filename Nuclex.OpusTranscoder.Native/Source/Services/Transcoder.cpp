@@ -25,6 +25,7 @@ limitations under the License.
 #include <Nuclex/Support/Threading/StopToken.h>
 #include <Nuclex/Support/Threading/Thread.h>
 #include <Nuclex/Support/BitTricks.h>
+#include <Nuclex/Support/Text/LexicalAppend.h>
 
 #include <Nuclex/Audio/Storage/AudioLoader.h>
 #include <Nuclex/Audio/Storage/AudioTrackDecoder.h>
@@ -162,6 +163,7 @@ namespace Nuclex::OpusTranscoder::Services {
     inputChannelOrder(),
     outputPath(),
     outputChannelOrder(),
+    stepPrefix(),
     currentStepDescription(u8"Idle"),
     currentStepProgress(0.0f),
     outcome(true) {} // for consistency
@@ -228,6 +230,7 @@ namespace Nuclex::OpusTranscoder::Services {
       this->outputPath = activeOutputPath;
 
       this->outcome.reset();
+      this->stepPrefix.clear();
       this->currentStepDescription.assign(u8"Starting...", 11);
       this->currentStepProgress = -1.0f;
     }
@@ -237,9 +240,13 @@ namespace Nuclex::OpusTranscoder::Services {
 
   // ------------------------------------------------------------------------------------------- //
 
-  std::string Transcoder::GetCurrentTranscodeStep() const {
+  std::string Transcoder::GetCurrentStepMessage() const {
     std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
-    return this->currentStepDescription;
+    if(this->stepPrefix.empty()) {
+      return this->currentStepDescription;
+    } else {
+      return this->stepPrefix + this->currentStepDescription;
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //
@@ -275,7 +282,7 @@ namespace Nuclex::OpusTranscoder::Services {
 
       // Read the entire input file with all audio samples into memory
       std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> track = (
-        decodeInputFile(file, canceler)
+        decodeAudioFile(file, canceler)
       );
 
       // If normalization is enabled (to bring up the volume for too quiet tracks),
@@ -318,13 +325,14 @@ namespace Nuclex::OpusTranscoder::Services {
         encodeTrack(track, track->Samples, canceler)
       );
       if(this->declip && this->iterativeDeclip) {
-        for(;;) {
+        setStepPrefixMessge(std::string(u8"Step 1: ", 8));
+        for(std::size_t step = 2;; ++step) {
 
           // Decode the Opus file again to see where the codec introduced clipping.
           // This will now add a second, full and uncompressed copy of the raw audio
           // data into memory, possibly amounting to 10+ GiB of data overall.
           std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodedOpusFile = (
-            decodeInputFile(encodedOpusFile, canceler)
+            decodeAudioFile(encodedOpusFile, canceler)
           );
 
           findClippingHalfwaves(decodedOpusFile, canceler);
@@ -335,6 +343,15 @@ namespace Nuclex::OpusTranscoder::Services {
           );
           if(remaining == 0) {
             break;
+          }
+
+          {
+            std::string prefix(u8"Step ", 5);
+            Nuclex::Support::Text::lexical_append(prefix, step);
+            prefix.append(u8" (", 2);
+            Nuclex::Support::Text::lexical_append(prefix, remaining);
+            prefix.append(u8" issues): ", 10);
+            setStepPrefixMessge(prefix);
           }
 
           // We'll sneakily reuse the decoded Opus file's sample array. This saves
@@ -353,34 +370,46 @@ namespace Nuclex::OpusTranscoder::Services {
       // If this point is reached, either declipping was off, or only a single pass was
       // requested, or the iterative declipper has done its work.
       writeVirtualFileToDisk(encodedOpusFile, this->outputPath);
+
+      {
+        std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
+
+        this->stepPrefix.clear();
+        this->currentStepDescription.assign(u8"Transcoding complete!", 21);
+        this->currentStepProgress = 0.0f;
+        this->outcome = true;
+      }
+    }
+    catch(const Nuclex::Support::Errors::CanceledError &error) {
+      std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
+
+      this->stepPrefix.clear();
+      this->currentStepDescription.assign(u8"Transcoding aborted on user request", 35);
+      this->currentStepProgress = -1.0f;
+      this->outcome = false;
     }
     catch(const std::exception &error) {
+      std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
+
+      this->stepPrefix.clear();
       this->currentStepDescription.assign(
         std::string(u8"Transcoding failed: ", 20) + error.what()
       );
       this->currentStepProgress = -1.0f;
       this->outcome = false;
-
-      this->Ended.Emit();
-
-      throw; //std::rethrow_exception(std::current_exception());
     }
-
-    this->currentStepDescription.assign(u8"Transcoding complete!", 21);
-    this->currentStepProgress = -1.0f;
-    this->outcome = true;
 
     this->Ended.Emit();
   }
 
   // ------------------------------------------------------------------------------------------- //
 
-  std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> Transcoder::decodeInputFile(
+  std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> Transcoder::decodeAudioFile(
     const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
   ) {
-    onStepBegun(std::string(u8"Opening input audio file...", 27));
-    onStepProgressed(0.0f);
+    this->currentStepProgress = 0.0f;
+    onStepBegun(std::string(u8"Opening audio file...", 21));
 
     Nuclex::Audio::TrackInfo trackInfo;
 
@@ -414,7 +443,7 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     canceler->ThrowIfCanceled();
-    onStepBegun(std::string(u8"Decoding input audio file..."));
+    onStepBegun(std::string(u8"Decoding audio file...", 22));
 
     // Remember the channel order in the input audio file (that's the one we'll read)
     {
@@ -675,10 +704,16 @@ namespace Nuclex::OpusTranscoder::Services {
 
   // ------------------------------------------------------------------------------------------- //
 
-  void Transcoder::onStepBegun(const std::string &stepDescription) {
+  void Transcoder::onStepBegun(
+    const std::string &stepDescription, bool resetProgress /* = false */
+  ) {
     {
       std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
       this->currentStepDescription = stepDescription;
+
+      if(resetProgress) {
+        this->currentStepProgress = 0.0f;
+      }
     }
 
     this->StepBegun.Emit();
@@ -693,6 +728,13 @@ namespace Nuclex::OpusTranscoder::Services {
     }
 
     this->Progressed.Emit();
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void Transcoder::setStepPrefixMessge(const std::string &prefix) {
+    std::lock_guard<std::mutex> trackAccessScope(this->trackAccessMutex);
+    this->stepPrefix = prefix;
   }
 
   // ------------------------------------------------------------------------------------------- //

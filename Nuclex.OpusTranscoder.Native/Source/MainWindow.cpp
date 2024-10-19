@@ -149,7 +149,11 @@ namespace Nuclex::OpusTranscoder {
 
   MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(std::make_unique<Ui::MainWindow>()) {
+    ui(std::make_unique<Ui::MainWindow>()),
+    visualizationScene(),
+    opusTranscoder(),
+    metadata(),
+    isTranscoding(false) {
 
     this->ui->setupUi(this);
     this->ui->channelGraphics->setRenderHints(
@@ -348,7 +352,7 @@ namespace Nuclex::OpusTranscoder {
   // ------------------------------------------------------------------------------------------- //
 
   void MainWindow::reportTranscodingStep() {
-    std::string step = this->opusTranscoder->GetCurrentTranscodeStep();
+    std::string step = this->opusTranscoder->GetCurrentStepMessage();
 
     this->ui->warningFrame->show();
     this->ui->messageLabel->setText(QString::fromStdString(step));
@@ -392,6 +396,7 @@ namespace Nuclex::OpusTranscoder {
   // ------------------------------------------------------------------------------------------- //
 
   void MainWindow::handleTranscodingEnded() {
+    this->isTranscoding = false;
     enableControlsForConfigurationPhase();
 
     this->ui->encodeOrCancelButton->setText(u8"Transcode");
@@ -400,7 +405,7 @@ namespace Nuclex::OpusTranscoder {
 
     this->ui->encodeProgress->setVisible(false);
 
-    std::string message = this->opusTranscoder->GetCurrentTranscodeStep();
+    std::string message = this->opusTranscoder->GetCurrentStepMessage();
     this->ui->messageLabel->setText(QString::fromStdString(message));
 
     std::optional<bool> outcome = this->opusTranscoder->GetOutcome();
@@ -701,6 +706,7 @@ namespace Nuclex::OpusTranscoder {
     // through which we'll be notified when the transcode progresses and/or ends.
     {
       enableControlsForConfigurationPhase(false);
+      this->isTranscoding = true;
 
       this->ui->encodeOrCancelButton->setText(u8"Pause");
       this->ui->encodeOrCancelButton->setEnabled(false);
@@ -716,7 +722,11 @@ namespace Nuclex::OpusTranscoder {
   // ------------------------------------------------------------------------------------------- //
 
   void MainWindow::abortOrQuitClicked() {
-    close();
+    if(this->isTranscoding) {
+      this->opusTranscoder->Cancel();
+    } else {
+      close();
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //

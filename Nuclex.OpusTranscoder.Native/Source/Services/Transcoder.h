@@ -125,9 +125,11 @@ namespace Nuclex::OpusTranscoder::Services {
       const std::string &outputPath
     );
 
+    public: using ConcurrentJob::Cancel;
+
     /// <summary>Queries the step the transcoder is currently executing</summary>
     /// <returns>A human-readable description of the currently running step<?returns>
-    public: std::string GetCurrentTranscodeStep() const;
+    public: std::string GetCurrentStepMessage() const;
 
     /// <summary>Queries the progress of the currently running step</summary>
     /// <returns>The progress of the currently running step</returns>
@@ -153,7 +155,7 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <param name="file">File from which the Opus audio data will be decoded</param>
     /// <param name="canceler">Token by which the operation can be signalled to cancel</param>
     /// <returns>The decoded input file and all needed metadata</returns>
-    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodeInputFile(
+    private: std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> decodeAudioFile(
       const std::shared_ptr<const Nuclex::Audio::Storage::VirtualFile> &file,
       const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler
     );
@@ -236,11 +238,15 @@ namespace Nuclex::OpusTranscoder::Services {
 
     /// <summary>Reports when the transcoding step has started</summary>
     /// <param name="stepDescription">Description of the currently running step</param>
-    private: void onStepBegun(const std::string &stepDescription);
+    /// <param name="resetProgress">True to reset the progress to zero</param>
+    private: void onStepBegun(const std::string &stepDescription, bool resetProgress = false);
 
     /// <summary>Reports the progress of the currently running step</summary>
     /// <param name="progress">Progress of the currently running step</param>
     private: void onStepProgressed(float progress);
+
+    /// <summary>Assigns a prefix message to be prepended to all status messages</summary>
+    private: void setStepPrefixMessge(const std::string &prefix);
 
     // ----------------------------------------------------------------------------------------- //
 
@@ -273,6 +279,8 @@ namespace Nuclex::OpusTranscoder::Services {
     /// <summary>Order in which the output channels appear</summary>
     private: std::vector<Nuclex::Audio::ChannelPlacement> outputChannelOrder;
 
+    /// <summary>Prefix step prepended to all progress messages</summary>
+    private: std::string stepPrefix;
     /// <summary>Description of the currently running transcode step</summary>
     private: std::string currentStepDescription;
     /// <summary>Progress of the currently running transcode step</summary>

@@ -114,6 +114,71 @@ namespace {
 
   // ------------------------------------------------------------------------------------------- //
 
+  Nuclex::OpusTranscoder::Audio::ClippingHalfwave getHalfwaveAroundSample(
+    const std::shared_ptr<Nuclex::OpusTranscoder::Audio::Track> &sourceTrack,
+    std::size_t channelIndex,
+    std::uint64_t sampleIndex
+  ) {
+    std::size_t channelCount = sourceTrack->Channels.size();
+
+    const float *samples = (
+      sourceTrack->Samples.data() +
+      (sampleIndex * channelCount) +
+      channelIndex
+    );
+
+    bool startsAboveZero = (samples[0] >= 0.0f);
+
+    // Figure out the earliest sample that is still on the same side of the zero line
+    // as the sample from which the search started. As per usual conventions, The start index
+    // is inclusive, so it points at the same that is already on the same side.
+    std::uint64_t priorCrossingIndex = sampleIndex;
+    {
+      const float *samplesCopy = samples;
+      while(0 < priorCrossingIndex) {
+        samplesCopy -= channelCount;
+        bool priorIsAboveZero = samplesCopy[0];
+
+        if(priorIsAboveZero != startsAboveZero) {
+          break;
+        }
+
+        --priorCrossingIndex;
+        samplesCopy -= channelCount;
+      }
+    }
+
+    // Now scan forward until the next zero crossing. The end index is exclusive, so we want
+    // the end index to be of the first sample that has crossed the zero line. We also do
+    // an immediate step forward because we expect the start sample to be a valid index.
+    std::uint64_t nextCrossingIndex = sampleIndex;
+    {
+      samples += channelCount;
+      ++nextCrossingIndex;
+
+      std::uint64_t endIndex = sourceTrack->Samples.size();
+      while(nextCrossingIndex < endIndex) {
+        bool isAboveZero = samples[0];
+
+        if(isAboveZero != startsAboveZero) {
+          break;
+        }
+
+        ++nextCrossingIndex;
+        samples += channelCount;
+      }
+    }
+
+    // Obviously, the sampleIndex will likely not be the peak and we leave the peak
+    // at 0.0 because the actual peak is unknown to us (it is in the other, decoded
+    // sample array). So an UpdateClippingHalfwaves() call is needed to fix that, too.
+    return Nuclex::OpusTranscoder::Audio::ClippingHalfwave(
+      priorCrossingIndex, sampleIndex, nextCrossingIndex, 0.0f
+    );
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
 } // anonymous namespace
 
 namespace Nuclex::OpusTranscoder::Audio {
@@ -234,7 +299,9 @@ namespace Nuclex::OpusTranscoder::Audio {
         if(existingIndex == InvalidIndex) {
           insertOrdered(
             sourceTrack->Channels[channelIndex].ClippingHalfwaves,
-            decodedClippingHalfwaves[index]
+            getHalfwaveAroundSample(
+              sourceTrack, channelIndex, decodedClippingHalfwaves[index].PeakIndex
+            )
           );
         } else {
           ClippingHalfwave &existingClippingHalfwave = (
