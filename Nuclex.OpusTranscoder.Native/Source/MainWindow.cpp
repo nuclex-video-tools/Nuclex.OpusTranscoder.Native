@@ -23,6 +23,8 @@ limitations under the License.
 #include "./MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include <Nuclex/Audio/KnownChannelLayouts.h>
+
 #include "./Services/ServicesRoot.h"
 #include "./Services/MetadataReader.h"
 #include "./Services/Transcoder.h"
@@ -36,23 +38,6 @@ limitations under the License.
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
-
-  const Nuclex::Audio::ChannelPlacement Stereo = (
-    Nuclex::Audio::ChannelPlacement::FrontLeft |
-    Nuclex::Audio::ChannelPlacement::FrontRight
-  );
-
-  // ------------------------------------------------------------------------------------------- //
-
-  const Nuclex::Audio::ChannelPlacement FiveDotOne = (
-    Nuclex::Audio::ChannelPlacement::FrontLeft |
-    Nuclex::Audio::ChannelPlacement::FrontRight |
-    Nuclex::Audio::ChannelPlacement::FrontCenter |
-    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
-    Nuclex::Audio::ChannelPlacement::BackLeft |
-    Nuclex::Audio::ChannelPlacement::BackRight
-  );
-
   // ------------------------------------------------------------------------------------------- //
 
   /// <summary>Builds a list of compatible input formats</summary>
@@ -85,7 +70,7 @@ namespace {
           QVariant(static_cast<int>(channelCount)).toString() + u8".0 Surround"
         );
       }
-    } else { // input file has ^^ no bass channel ^^ / vv bass channel present vv
+    } else { // input file ^^ lacking bass channel ^^ / vv with bass channel vv
       if(channelCount == 1) {
         compatibleFormats.append(u8"Bass");
       } else if(channelCount == 2) {
@@ -636,11 +621,13 @@ namespace Nuclex::OpusTranscoder {
     // Update the illustration panel to display the output channels and
     // which input channels will contribute to them.
     {
+      using Nuclex::Audio::KnownChannelLayouts;
+
       std::unique_ptr<QGraphicsScene> scene = std::make_unique<QGraphicsScene>();
       ChannelMapSceneBuilder::BuildScene(
         *scene,
         this->metadata.value().ChannelPlacements, // input channels
-        isStereo ? Stereo : FiveDotOne
+        isStereo ? KnownChannelLayouts::Stereo : KnownChannelLayouts::FiveDotOneSurround
       );
 
       this->ui->channelGraphics->setScene(scene.get());
@@ -690,7 +677,12 @@ namespace Nuclex::OpusTranscoder {
         }
       }
     }
-    this->opusTranscoder->SetOutputChannels(isStereo ? Stereo : FiveDotOne);
+    {
+      using Nuclex::Audio::KnownChannelLayouts;
+      this->opusTranscoder->SetOutputChannels(
+        isStereo ? KnownChannelLayouts::Stereo : KnownChannelLayouts::FiveDotOneSurround
+      );
+    }
 
     // Finally, the target bitrate if kilobits per second
     this->opusTranscoder->SetTargetBitrate(

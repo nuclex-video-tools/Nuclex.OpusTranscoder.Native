@@ -74,6 +74,12 @@ namespace Nuclex::OpusTranscoder::Audio {
       Nuclex::Support::Events::Delegate<void(float)> &progressCallback
     );
 
+    /// <summary>Verifies the consistency of a set of clipping half-waves</summary>
+    /// <param name="track">Track in which the consistency will be verified</param>
+    public: static void DebugVerifyConsistency(
+      const std::shared_ptr<Track> &track
+    );
+
   };
 
   // ------------------------------------------------------------------------------------------- //

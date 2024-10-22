@@ -1,6 +1,11 @@
 Nuclex Opus Transcoder
 ======================
 
+| NOTE: This currently builds against a work-in-progress version of
+| Nuclex.Audio.Native, meaning support for FLAC and Waveform as inputs
+| is unfinished (at the time I'm writing this). Only WavPack works fully
+| as the input format.
+
 This is a small utility that transcodes different lossless audio codecs,
 currently FLAC, Wavform and WavPack, into high quality Opus files.
 All encoding and decoding is done directly through the reference libraries

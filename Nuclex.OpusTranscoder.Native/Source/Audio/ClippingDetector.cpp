@@ -74,7 +74,7 @@ namespace {
   /// <param name="halfwaves">Existing half-waves</param>
   /// <param name="clippingHalfwave">New half-wave to match to an existing one</param>
   /// <returns>The index of the maching existing half-wave or -1 if none is found</returns>
-  std::size_t findExisitingClippingHalfwave(
+  std::size_t findExistingClippingHalfwave(
     const std::vector<Nuclex::OpusTranscoder::Audio::ClippingHalfwave> &halfwaves,
     const Nuclex::OpusTranscoder::Audio::ClippingHalfwave &clippingHalfwave
   ) {
@@ -133,7 +133,7 @@ namespace {
       const float *backwardRead = forwardRead;
       while(0 < priorCrossingIndex) {
         backwardRead -= channelCount; // Step back to before index counter
-        bool priorIsAboveZero = backwardRead[0]; // Read preceding sample
+        bool priorIsAboveZero = (backwardRead[0] >= 0.0f); // Preceding sample!
 
         if(priorIsAboveZero != startsAboveZero) {
           break;
@@ -157,7 +157,7 @@ namespace {
 
       std::uint64_t endIndex = sourceTrack->Samples.size();
       while(nextCrossingIndex < endIndex) {
-        bool isAboveZero = forwardRead[0];
+        bool isAboveZero = (forwardRead[0] >= 0.0f);
 
         if(isAboveZero != startsAboveZero) {
           break;
@@ -294,7 +294,7 @@ namespace Nuclex::OpusTranscoder::Audio {
       // Check each clipping instance in the decodedTrack
       for(std::size_t index = 0; index < decodedClippingHalfwaveCount; ++index) {
 
-        std::size_t existingIndex = findExisitingClippingHalfwave(
+        std::size_t existingIndex = findExistingClippingHalfwave(
           sourceTrack->Channels[channelIndex].ClippingHalfwaves,
           decodedClippingHalfwaves[index]
         );
@@ -324,13 +324,13 @@ namespace Nuclex::OpusTranscoder::Audio {
     const std::shared_ptr<const Nuclex::Support::Threading::StopToken> &canceler,
     Nuclex::Support::Events::Delegate<void(float)> &progressCallback
   ) {
-    std::size_t channelCount = track->Channels.size();
     assert(samples.size() == track->Samples.size());
 
     std::size_t clippingPeakCount = 0;
 
     // We'll process each channel separately, otherwise keeping track of the start and
     // end indices of each clipping half-wave becomes just to complicated...
+    std::size_t channelCount = track->Channels.size();
     for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
       std::vector<ClippingHalfwave> &clippingHalfwaves = (
         track->Channels[channelIndex].ClippingHalfwaves
@@ -366,7 +366,7 @@ namespace Nuclex::OpusTranscoder::Audio {
         // At this point, we also count up the 'IneffectiveIterationCount' for any
         // peaks that remain unchanged compared to the previous iteration to allow us
         // to give up on those that we can't get moving.
-        clippingHalfwaves[clipIndex].PeakIndex = peakIndex;
+        //clippingHalfwaves[clipIndex].PeakIndex = peakIndex;
         if(peak != clippingHalfwaves[clipIndex].PeakAmplitude) {
           clippingHalfwaves[clipIndex].IneffectiveIterationCount = 0;
           clippingHalfwaves[clipIndex].PeakAmplitude = peak;
@@ -388,6 +388,28 @@ namespace Nuclex::OpusTranscoder::Audio {
     } // for each channel
 
     return clippingPeakCount;
+  }
+
+  // ------------------------------------------------------------------------------------------- //
+
+  void ClippingDetector::DebugVerifyConsistency(const std::shared_ptr<Track> &track) {
+    std::size_t channelCount = track->Channels.size();
+    for(std::size_t channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
+      std::vector<ClippingHalfwave> &clippingHalfwaves = (
+        track->Channels[channelIndex].ClippingHalfwaves
+      );
+
+      std::uint64_t previousHalfwaveEnd = 0;
+
+      std::size_t clippingHalfwaveCount = clippingHalfwaves.size();
+      for(std::size_t clipIndex = 0; clipIndex < clippingHalfwaveCount; ++clipIndex) {
+        assert(
+          (clippingHalfwaves[clipIndex].PriorZeroCrossingIndex >= previousHalfwaveEnd) &&
+          u8"Clipping half-waves must not intersect each other or be duplicated"
+        );
+        previousHalfwaveEnd = clippingHalfwaves[clipIndex].NextZeroCrossingIndex;
+      }
+    }
   }
 
   // ------------------------------------------------------------------------------------------- //

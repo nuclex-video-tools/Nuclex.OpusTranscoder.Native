@@ -29,6 +29,7 @@ limitations under the License.
 
 #include <Nuclex/Audio/Storage/AudioLoader.h>
 #include <Nuclex/Audio/Storage/AudioTrackDecoder.h>
+#include <Nuclex/Audio/KnownChannelLayouts.h>
 
 #include "../Audio/Track.h"
 #include "../Audio/ChannelLayoutTransformer.h"
@@ -37,41 +38,15 @@ limitations under the License.
 #include "../Audio/Normalizer.h"
 #include "../Audio/OpusEncoder.h"
 
+#if !defined(NDEBUG)
+#include <set> // for std::set
+#endif
+
 #include <QDir>
 
 namespace {
 
   // ------------------------------------------------------------------------------------------- //
-
-  const Nuclex::Audio::ChannelPlacement Stereo = (
-    Nuclex::Audio::ChannelPlacement::FrontLeft |
-    Nuclex::Audio::ChannelPlacement::FrontRight
-  );
-
-  // ------------------------------------------------------------------------------------------- //
-
-  const Nuclex::Audio::ChannelPlacement FiveDotOne = (
-    Nuclex::Audio::ChannelPlacement::FrontLeft |
-    Nuclex::Audio::ChannelPlacement::FrontRight |
-    Nuclex::Audio::ChannelPlacement::FrontCenter |
-    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
-    Nuclex::Audio::ChannelPlacement::BackLeft |
-    Nuclex::Audio::ChannelPlacement::BackRight
-  );
-
-  // ------------------------------------------------------------------------------------------- //
-
-  const Nuclex::Audio::ChannelPlacement SevenDotOne = (
-    Nuclex::Audio::ChannelPlacement::FrontLeft |
-    Nuclex::Audio::ChannelPlacement::FrontRight |
-    Nuclex::Audio::ChannelPlacement::FrontCenter |
-    Nuclex::Audio::ChannelPlacement::LowFrequencyEffects |
-    Nuclex::Audio::ChannelPlacement::BackLeft |
-    Nuclex::Audio::ChannelPlacement::BackRight |
-    Nuclex::Audio::ChannelPlacement::SideLeft |
-    Nuclex::Audio::ChannelPlacement::SideRight
-  );
-
   // ------------------------------------------------------------------------------------------- //
 
   // TODO: Lifted from the ChannelOrderFactory in Nuclex.Audio.Native
@@ -339,8 +314,36 @@ namespace Nuclex::OpusTranscoder::Services {
           );
           assert(decodedOpusFile->Samples.size() == track->Samples.size());
 
+#if !defined(NDEBUG)
+          std::set<std::uint64_t> existingPeaks[8];
+          int counts[8];
+          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
+            counts[index] = track->Channels[index].ClippingHalfwaves.size();
+            for(std::size_t index2 = 0; index2 < track->Channels[index].ClippingHalfwaves.size(); ++index2) {
+              existingPeaks[index].insert(track->Channels[index].ClippingHalfwaves[index2].PeakIndex);
+            }
+          }
+#endif
+
+          // Locate instances of clipping in the decoded file. These are then integrated
+          // into the existing collection of clipping half-waves by finding a half-wave
+          // covering the clipping samples in the source channels.
           findClippingHalfwaves(decodedOpusFile, canceler);
           Audio::ClippingDetector::Integrate(track, decodedOpusFile);
+#if !defined(NDEBUG)
+          Audio::ClippingDetector::DebugVerifyConsistency(track);
+
+          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
+            for(std::size_t index2 = 0; index2 < track->Channels[index].ClippingHalfwaves.size(); ++index2) {
+              if(existingPeaks[index].erase(track->Channels[index].ClippingHalfwaves[index2].PeakIndex)) {
+                --counts[index];
+              }
+            }
+          }
+          for(std::size_t index = 0; index < track->Channels.size(); ++index) {
+            assert(counts[index] == 0);
+          }
+#endif
 
           std::size_t remaining = updateClippingHalfwaves(
             track, decodedOpusFile->Samples, canceler
@@ -573,12 +576,12 @@ namespace Nuclex::OpusTranscoder::Services {
         track, canceler, progressCallback
       );
     } else if(outputChannelCount < track->Channels.size()) {
-      if(this->outputChannels == Stereo) {
+      if(this->outputChannels == Nuclex::Audio::KnownChannelLayouts::Stereo) {
         onStepBegun(std::string(u8"Downmixing to stereo...", 23));
         ChannelLayoutTransformer::DownmixToStereo(
           track, this->nightmodeLevel, canceler, progressCallback
         );
-      } else if(this->outputChannels == FiveDotOne) {
+      } else if(this->outputChannels == Nuclex::Audio::KnownChannelLayouts::FiveDotOneSurround) {
         onStepBegun(std::string(u8"Upmixing 7.1 to 5.1...", 22));
         ChannelLayoutTransformer::DownmixToFiveDotOne(
           track, canceler, progressCallback
